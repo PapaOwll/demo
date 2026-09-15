@@ -162,7 +162,7 @@ export function setGlitchtipAppContext(appState = {}) {
   setContext('application', {
     app_version: __APP_VERSION__,
     environment: import.meta.env.VITE_NODE_ENV,
-    base_url: import.meta.env.VITE_BASE_URL,
+    base_url: window.location.origin,
     build_time: import.meta.env.VITE_BUILD_TIME || 'unknown',
     ...appState,
   })

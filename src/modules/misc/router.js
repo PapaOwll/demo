@@ -1,13 +1,5 @@
 export default [
   {
-    path: '/test-api',
-    name: 'test-api',
-    component: () => import('./pages/TestApi'),
-    meta: {
-      isShared: true,
-    },
-  },
-  {
     path: '/error-test',
     name: 'error-test',
     component: () => import('./pages/ErrorTest'),

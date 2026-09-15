@@ -23,8 +23,10 @@ export const contactResults = () => request.get('v1/contact/results')
 export const apiGetContactTypes = () =>
   request.get('v1/client/enums', { params: { enums: 'ContactTypeEnum' } })
 
-export const apiGetAudioFile = (file) =>
-  request.get(`v1/contact/recordings/${file}`, {
-    responseType: 'blob',
-    timeout: 120_000,
-  })
+// Served from the bundled sample audio file so call playback works without
+// any external telephony backend.
+export const apiGetAudioFile = async (file) => {
+  const response = await fetch(`/mocks/sample-voice.wav?file=${encodeURIComponent(file)}`)
+  if (!response.ok) throw new Error(`HTTP error: ${response.status}`)
+  return { data: await response.blob() }
+}

@@ -265,7 +265,7 @@ watch(
       if (
         'Notification' in window &&
         Notification.permission === 'granted' &&
-        shouldShowNotification(import.meta.env.VITE_BASE_URL)
+        shouldShowNotification(window.location.origin)
       ) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification(

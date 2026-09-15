@@ -78,17 +78,6 @@ export default defineConfig(({ mode }) => {
           fileURLToPath(new URL('..', import.meta.url)),
         ],
       },
-      proxy:
-        process.env.NODE_ENV === 'production'
-          ? undefined
-          : {
-              '/api': {
-                secure: false,
-                changeOrigin: true,
-                target: process.env.VITE_API_PROXY_URL,
-                rewrite: (_path) => _path.replace(/^\/api/, ''),
-              },
-            },
     },
     build: {
       target: ['chrome64', 'firefox67', 'safari11.1', 'edge79'],
