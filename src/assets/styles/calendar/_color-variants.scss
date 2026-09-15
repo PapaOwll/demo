@@ -1,0 +1,92 @@
+@use '@/assets/styles/global.scss' as *;
+
+@mixin apply() {
+  &--color-blue {
+    background: $blue-1;
+    border-color: $blue-2;
+    color: $blue-7;
+  }
+
+  &--color-pink {
+    background: $pink-1;
+    border-color: $pink-2;
+    color: $pink-7;
+  }
+
+  &--color-purple {
+    background: $purple-1;
+    border-color: $purple-2;
+    color: $purple-7;
+  }
+
+  &--color-teal {
+    background: $teal-1;
+    border-color: $teal-2;
+    color: $teal-7;
+  }
+
+  &--color-amber {
+    background: $amber-1;
+    border-color: $amber-2;
+    color: $amber-9;
+  }
+
+  &--color-gray {
+    background: $grey-1;
+    border-color: $grey-3;
+    color: $grey-6;
+  }
+  &--color-light-blue {
+    background: #e8f4fd;
+    border-color: #b8d9f0;
+    color: #2e86c1;
+  }
+
+  &--color-light-red {
+    background: #fde8e8;
+    border-color: #f0b8b8;
+    color: #c12e2e;
+  }
+
+  &--color-light-purple {
+    background: #ede8fd;
+    border-color: #c4b8f0;
+    color: #5b2ec1;
+  }
+
+  &--color-light-green {
+    background: #e8fde8;
+    border-color: #b8f0b8;
+    color: #2ec12e;
+  }
+
+  &--color-light-gray {
+    background: #f5f5f5;
+    border-color: #cccccc;
+    color: #555555;
+  }
+
+  &--color-light-orange {
+    background: #fdf5e8;
+    border-color: #f0d9b8;
+    color: #c17a2e;
+  }
+
+  &--color-light-teal {
+    background: #e8fdf5;
+    border-color: #b8f0d9;
+    color: #2ec18a;
+  }
+
+  &--color-light-pink {
+    background: #fde8f5;
+    border-color: #f0b8d9;
+    color: #c12e8a;
+  }
+
+  &--color-light-yellow {
+    background: #fef3d0;
+    border-color: #e8d48a;
+    color: #7a6418;
+  }
+}

@@ -1,0 +1,57 @@
+.app-notify-shell {
+  &.q-notification {
+    background: transparent !important;
+    color: inherit !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .q-notification__wrapper {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: 100% !important;
+  }
+
+  .q-notification__content {
+    align-items: flex-start !important;
+  }
+
+  .q-notification__progress {
+    width: 98%;
+    margin: 0 auto !important;
+    z-index: 29;
+    bottom: 10px !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 2px !important;
+    border-radius: $radius-md !important;
+    opacity: 1 !important;
+  }
+
+  .q-notification__badge {
+    top: 0 !important;
+    right: -10px;
+  }
+
+  &--success .q-notification__progress {
+    background-color: $green-8 !important;
+  }
+
+  &--error .q-notification__progress {
+    background-color: $red-8 !important;
+  }
+
+  &--warning .q-notification__progress {
+    background-color: $amber-9 !important;
+  }
+
+  &--info .q-notification__progress {
+    background-color: $blue-8 !important;
+  }
+  .q-notification__caption {
+    color: $dark !important;
+    font-size: 12px !important;
+  }
+}

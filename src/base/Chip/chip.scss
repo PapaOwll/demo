@@ -1,0 +1,245 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-xs;
+  background: var(--chip-bg);
+  color: var(--chip-text) !important;
+  border: 1.5px solid var(--chip-border, transparent);
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+
+  &--rounded {
+    border-radius: 100px !important;
+
+    & .chip__avatar {
+      border-radius: 100px;
+    }
+  }
+
+  &--sm {
+    height: 28px;
+    padding: $spacing-xs $spacing-sm;
+    --chip-avatar-size: 28px;
+    font-size: 14px;
+  }
+
+  &--md {
+    height: 32px;
+    padding: 6px $spacing-sm;
+    --chip-avatar-size: 32px;
+
+    > .chip__text {
+      font-size: 14px;
+    }
+  }
+
+  &--lg {
+    height: 40px;
+    padding: $spacing-sm $spacing-md;
+    --chip-avatar-size: 40px;
+    font-size: 16px;
+  }
+
+  &--left-avatar {
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-top: 0;
+  }
+
+  &__action {
+    cursor: pointer;
+    color: inherit;
+  }
+
+  &--disabled {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+
+    & .chip__action {
+      cursor: not-allowed;
+    }
+  }
+
+  &__text {
+    color: inherit !important;
+  }
+
+  &__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: var(--chip-avatar-bg);
+    color: var(--chip-avatar-color);
+    overflow: hidden;
+
+    svg {
+      width: 60%;
+      height: 60%;
+      stroke: currentColor;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &:not(.chip--disabled):not(.chip--left-avatar):hover {
+    --chip-bg: var(--chip-bg-hover);
+  }
+
+  &--left-avatar:not(.chip--disabled):hover {
+    --chip-bg: var(--chip-bg-hover-avatar);
+    --chip-text: #{$dark};
+  }
+
+  &--light-blue {
+    --chip-bg-filled: #{$light-blue-filled};
+    --chip-bg-filled-hover: #{$light-blue-filled-hover};
+    --chip-text-filled: #{$white};
+
+    --chip-border-outline: #{$light-blue-outline};
+    --chip-text-outline: #{$light-blue-text};
+    --chip-bg-outline-hover: #{$light-blue-outline-hover};
+
+    --chip-avatar-bg-filled: #{$light-blue-light};
+    --chip-avatar-color-filled: #{$light-blue-text};
+
+    --chip-avatar-bg-outline: #{$light-blue-light};
+    --chip-avatar-color-outline: #{$light-blue-text};
+
+    --chip-bg-hover-avatar: rgba($grey-1, $opacity-light);
+  }
+
+  &--red {
+    --chip-bg-filled: #{$red-filled};
+    --chip-bg-filled-hover: #{$red-filled-hover};
+    --chip-text-filled: #{$white};
+
+    --chip-border-outline: #{$red-outline};
+    --chip-text-outline: #{$red-text};
+    --chip-bg-outline-hover: #{$red-outline-hover};
+
+    --chip-avatar-bg-filled: #{$red-light};
+    --chip-avatar-color-filled: #{$red-text};
+
+    --chip-avatar-bg-outline: #{$red-light};
+    --chip-avatar-color-outline: #{$red-text};
+
+    --chip-bg-hover-avatar: rgba($grey-1, $opacity-light);
+  }
+
+  &--amber {
+    --chip-bg-filled: #{$amber-filled};
+    --chip-bg-filled-hover: #{$amber-filled-hover};
+    --chip-text-filled: #{$dark};
+
+    --chip-border-outline: #{$amber-outline};
+    --chip-text-outline: #{$amber-text};
+    --chip-bg-outline-hover: #{$amber-outline-hover};
+
+    --chip-avatar-bg-filled: #{$amber-light};
+    --chip-avatar-color-filled: #{$amber-text};
+
+    --chip-avatar-bg-outline: #{$amber-light};
+    --chip-avatar-color-outline: #{$amber-text};
+
+    --chip-bg-hover-avatar: rgba($grey-1, $opacity-light);
+  }
+
+  &--green {
+    --chip-bg-filled: #{$green-filled};
+    --chip-bg-filled-hover: #{$green-filled-hover};
+    --chip-text-filled: #{$white};
+
+    --chip-border-outline: #{$green-outline};
+    --chip-text-outline: #{$green-text};
+    --chip-bg-outline-hover: #{$green-outline-hover};
+
+    --chip-avatar-bg-filled: #{$green-light};
+    --chip-avatar-color-filled: #{$green-text};
+
+    --chip-avatar-bg-outline: #{$green-light};
+    --chip-avatar-color-outline: #{$green-text};
+
+    --chip-bg-hover-avatar: rgba($grey-1, $opacity-light);
+  }
+
+  &--blue-grey {
+    --chip-bg-filled: #{$blue-grey-filled};
+    --chip-bg-filled-hover: #{$blue-grey-filled-hover};
+    --chip-text-filled: #{$white};
+
+    --chip-border-outline: #{$gray-200};
+    --chip-text-outline: #{$blue-grey-text};
+    --chip-bg-outline-hover: #{$blue-grey-outline-hover};
+
+    --chip-avatar-bg-filled: #{$blue-grey-light};
+    --chip-avatar-color-filled: #{$blue-grey-text};
+
+    --chip-avatar-bg-outline: #{$blue-grey-light};
+    --chip-avatar-color-outline: #{$blue-grey-text};
+
+    --chip-bg-hover-avatar: rgba($grey-1, $opacity-light);
+  }
+
+  &--dark {
+    --chip-bg-filled: #{$dark-filled};
+    --chip-bg-filled-hover: #{$dark-filled-hover};
+    --chip-text-filled: #{$white};
+
+    --chip-border-outline: #{$dark-outline};
+    --chip-text-outline: #{$dark-text};
+    --chip-bg-outline-hover: #{$dark-outline-hover};
+
+    --chip-avatar-bg-filled: #{$dark-light};
+    --chip-avatar-color-filled: #{$dark-text};
+
+    --chip-avatar-bg-outline: #{$dark-light};
+    --chip-avatar-color-outline: #{$dark-text};
+
+    --chip-bg-hover-avatar: rgba($grey-1, $opacity-light);
+  }
+}
+
+.chip--filled {
+  --chip-bg: var(--chip-bg-filled);
+  --chip-bg-hover: var(--chip-bg-filled-hover);
+  --chip-text: var(--chip-text-filled);
+  --chip-bg-opacity: 0%;
+  --chip-avatar-bg: var(--chip-avatar-bg-filled);
+  --chip-avatar-color: var(--chip-avatar-color-filled);
+}
+
+.chip--outline {
+  --chip-bg: transparent;
+  --chip-bg-hover: var(--chip-bg-outline-hover);
+  --chip-text: var(--chip-text-outline);
+  --chip-border: var(--chip-border-outline);
+  --chip-bg-opacity: 10%;
+  --chip-avatar-bg: var(--chip-avatar-bg-outline);
+  --chip-avatar-color: var(--chip-avatar-color-outline);
+}
+
+.chip--left-avatar.chip--outline {
+  --chip-bg: transparent;
+  --chip-text: #{$dark-text};
+  --chip-border: #{$grey-2};
+}
+
+.chip--left-avatar.chip--filled {
+  --chip-bg: transparent;
+  --chip-text: #{$dark-text};
+  --chip-border: #{$grey-2};
+}
+
+.chip--left-avatar.chip--light-blue:not(.chip--disabled):hover {
+  --chip-bg: rgba($grey-1, 1);
+  --chip-text: #{$dark};
+}

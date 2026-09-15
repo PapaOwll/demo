@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سیستم CRM سیترا - آفلاین</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Shabnam', 'Vazirmatn', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 500px;
+      text-align: center;
+    }
+    .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #333;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    p {
+      color: #666;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #5568d3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>ارتباط با اینترنت برقرار نیست</h1>
+    <p>
+      لطفاً اتصال اینترنت خود را بررسی کنید و دوباره تلاش کنید.
+      <br>
+      برخی از امکانات سیستم در حالت آفلاین در دسترس نیستند.
+    </p>
+    <button class="btn" onclick="window.location.reload()">تلاش مجدد</button>
+  </div>
+</body>
+</html>

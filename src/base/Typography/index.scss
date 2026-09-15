@@ -1,0 +1,202 @@
+.typography {
+  margin: 0;
+  padding: 0;
+
+  // ============================================
+  // Headings (all Bold by default)
+  // ============================================
+  &--heading-h1 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.8;
+  }
+
+  &--heading-h2 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.8;
+  }
+
+  &--heading-h3 {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.8;
+  }
+
+  &--heading-h4 {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.8;
+  }
+
+  &--heading-h5 {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.8;
+  }
+
+  &--heading-h6 {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.8;
+  }
+
+  // ============================================
+  // Body Sizes
+  // ============================================
+  &--body-1 {
+    font-size: 20px;
+    line-height: 1.7;
+  }
+
+  &--body-2 {
+    font-size: 18px;
+    line-height: 1.7;
+  }
+
+  &--body-3 {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  &--body-4 {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  // ============================================
+  // Caption
+  // ============================================
+  &--caption {
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  // ============================================
+  // Font Weights (for body & caption)
+  // ============================================
+  &--weight-bold {
+    font-weight: 700;
+  }
+
+  &--weight-semibold {
+    font-weight: 600;
+  }
+
+  &--weight-medium {
+    font-weight: 500;
+  }
+
+  &--weight-regular {
+    font-weight: 400;
+  }
+
+  // ============================================
+  // Colors
+  // ============================================
+  &--color-dark {
+    color: $dark-text;
+  }
+  &--color-dark-primary {
+    color: $text;
+  }
+  &--color-body {
+    color: $body;
+  }
+
+  &--color-red {
+    color: $red-text;
+  }
+
+  &--color-pink {
+    color: $pink-text;
+  }
+
+  &--color-purple {
+    color: $purple-text;
+  }
+
+  &--color-deep-purple {
+    color: $deep-purple-text;
+  }
+
+  &--color-indigo {
+    color: $indigo-text;
+  }
+
+  &--color-blue {
+    color: $blue-text;
+  }
+
+  &--color-light-blue {
+    color: $light-blue-text;
+  }
+
+  &--color-cyan {
+    color: $cyan-text;
+  }
+
+  &--color-teal {
+    color: $teal-text;
+  }
+
+  &--color-green {
+    color: $green-text;
+  }
+
+  &--color-light-green {
+    color: $light-green-text;
+  }
+
+  &--color-lime {
+    color: $lime-text;
+  }
+
+  &--color-yellow {
+    color: $yellow-text;
+  }
+
+  &--color-amber {
+    color: $amber-text;
+  }
+
+  &--color-orange {
+    color: $orange-text;
+  }
+
+  &--color-deep-orange {
+    color: $deep-orange-text;
+  }
+
+  &--color-brown {
+    color: $brown-text;
+  }
+
+  &--color-grey {
+    color: $grey-text;
+  }
+
+  &--color-blue-grey {
+    color: $blue-grey-text;
+  }
+
+  &--color-dark-2 {
+    color: #374151;
+  }
+
+  &--color-white {
+    color: #ffffff;
+  }
+
+  &--color-warning {
+    color: #f2a609;
+  }
+
+  &--color-textSecondary {
+    color: #6b7280;
+  }
+
+  &--color-currentColor {
+    color: currentColor;
+  }
+}

@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1.6
+FROM node:20.10-alpine3.17 as build-stage
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+COPY --link . .
+
+ARG ENV_FILE=.env.development
+COPY ${ENV_FILE} .env
+
+RUN npm run build
+
+FROM nginx:stable-alpine
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build-stage /app/dist /usr/share/nginx/html

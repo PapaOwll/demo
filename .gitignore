@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+.claudes
+node_modules
+.DS_Store
+dist
+dist-ssr
+dev-dist
+coverage
+*.local
+.vite
+
+/cypress/videos/
+/cypress/screenshots/
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.qodo
+.github
+.claude
+.kilo/*
+!.kilo/skills/
+!.kilo/setup-jira-mcp.ps1
+!.kilo/setup-jira-mcp.sh
+
+stats.html
+.mcp.json
+storybook-static
+
+# Env files (keep example)
+.env
+.env.*
+!.env.example

@@ -1,0 +1,18 @@
+export const ENTITIES_TYPE = Object.freeze({
+  BOOKING: 1,
+  VISIT: 2,
+  TASK: 3,
+  USER: 4,
+  CONTACT: 5,
+  STATUS: 6,
+  SURVEY: 7,
+  TREATMENT_PLAN: 8,
+  CLINIC: 9,
+  SERVE: 10,
+  GUID_VISIT_REGISTER: 11,
+  CREDIT: 12,
+  DOCUMENT: 13,
+  SETTING: 14,
+  FEEDBACK: 15,
+  DOCTOR_REVIEW: 16,
+})

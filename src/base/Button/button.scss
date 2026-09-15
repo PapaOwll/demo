@@ -1,0 +1,399 @@
+.button {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  line-height: 1;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  user-select: none;
+  white-space: nowrap;
+  position: relative;
+
+  &:focus-visible {
+    outline: 2px solid var(--btn-text);
+    outline-offset: 2px;
+  }
+
+  &.button--disabled,
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &.button--loading {
+    pointer-events: none;
+
+    &:not(.button--icon-only) {
+      min-width: 80px;
+    }
+  }
+
+  &--sm {
+    height: $spacing-2xl;
+    padding: 0 $spacing-md;
+    font-size: 14px;
+    font-weight: 500;
+    gap: $spacing-xxs;
+    min-width: 80px;
+
+    &.button--icon-only {
+      width: $spacing-2xl;
+      height: $spacing-2xl;
+      padding: 0;
+      min-width: auto;
+    }
+  }
+
+  &--md {
+    height: $spacing-3xl;
+    padding: 0 $spacing-md;
+    font-size: 16px;
+    font-weight: 500;
+    gap: $spacing-xxs;
+    min-width: 80px;
+
+    &.button--icon-only {
+      width: $spacing-3xl;
+      height: $spacing-3xl;
+      padding: 0;
+      min-width: auto;
+    }
+  }
+
+  &--lg {
+    height: 48px;
+    padding: 0 $spacing-lg;
+    font-size: 18px;
+    font-weight: 500;
+    gap: $spacing-xxs;
+    min-width: 120px;
+
+    &.button--icon-only {
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      min-width: auto;
+    }
+  }
+
+  &--xl {
+    height: 56px;
+    padding: 0 $spacing-lg;
+    font-size: 20px;
+    font-weight: 500;
+    gap: $spacing-xxs;
+    min-width: 120px;
+
+    &.button--icon-only {
+      width: 56px;
+      height: 56px;
+      padding: 0;
+      min-width: auto;
+    }
+  }
+
+  &--rounded {
+    border-radius: 100px !important;
+  }
+
+  &:not(.button--rounded) {
+    border-radius: $radius-sm !important;
+  }
+
+  &--full-width {
+    width: 100% !important;
+    display: flex;
+
+    .button__content {
+      width: 100%;
+    }
+  }
+
+  &--filled {
+    &:hover:not(.button--disabled):not(.button--loading) {
+      filter: brightness(0.95);
+    }
+
+    &:active:not(.button--disabled):not(.button--loading) {
+      filter: brightness(0.9);
+    }
+  }
+
+  &--outline {
+    border-width: 1px;
+    border-style: solid;
+  }
+}
+
+.button__content {
+  display: inherit;
+  align-items: inherit;
+  justify-content: inherit;
+  gap: inherit;
+
+  &--loading {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.button__text {
+  padding: 0 $spacing-xs;
+  color: inherit !important;
+}
+
+.button__loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.button--primary {
+  --btn-bg-filled: #{$primary};
+  --btn-bg-filled-hover: #{$primary-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$primary-outline-hover};
+  --btn-border-outline: #{$light-blue-3};
+  --btn-text-outline: #{$primary};
+
+  --btn-bg-flat-hover: #{$primary-light-hover};
+  --btn-text-flat: #{$primary-text};
+}
+
+.button--pink {
+  --btn-bg-filled: #{$pink-filled};
+  --btn-bg-filled-hover: #{$pink-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$pink-outline-hover};
+  --btn-border-outline: #{$pink-outline};
+  --btn-text-outline: #{$pink-text};
+
+  --btn-bg-flat-hover: #{$pink-light-hover};
+  --btn-text-flat: #{$pink-text};
+}
+
+.button--purple {
+  --btn-bg-filled: #{$purple-filled};
+  --btn-bg-filled-hover: #{$purple-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$purple-outline-hover};
+  --btn-border-outline: #{$purple-outline};
+  --btn-text-outline: #{$purple-text};
+
+  --btn-bg-flat-hover: #{$purple-light-hover};
+  --btn-text-flat: #{$purple-text};
+}
+
+.button--deep-purple {
+  --btn-bg-filled: #{$deep-purple-filled};
+  --btn-bg-filled-hover: #{$deep-purple-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$deep-purple-outline-hover};
+  --btn-border-outline: #{$deep-purple-outline};
+  --btn-text-outline: #{$deep-purple-text};
+
+  --btn-bg-flat-hover: #{$deep-purple-light-hover};
+  --btn-text-flat: #{$deep-purple-text};
+}
+
+.button--indigo {
+  --btn-bg-filled: #{$indigo-filled};
+  --btn-bg-filled-hover: #{$indigo-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$indigo-outline-hover};
+  --btn-border-outline: #{$indigo-outline};
+  --btn-text-outline: #{$indigo-text};
+
+  --btn-bg-flat-hover: #{$indigo-light-hover};
+  --btn-text-flat: #{$indigo-text};
+}
+
+.button--blue {
+  --btn-bg-filled: #{$blue-filled};
+  --btn-bg-filled-hover: #{$blue-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$blue-outline-hover};
+  --btn-border-outline: #{$blue-outline};
+  --btn-text-outline: #{$blue-text};
+
+  --btn-bg-flat-hover: #{$blue-light-hover};
+  --btn-text-flat: #{$blue-text};
+}
+
+.button--light-blue {
+  --btn-bg-filled: #{$light-blue-filled};
+  --btn-bg-filled-hover: #{$light-blue-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$light-blue-outline-hover};
+  --btn-border-outline: #{$light-blue-outline};
+  --btn-text-outline: #{$light-blue-text};
+
+  --btn-bg-flat-hover: #{$light-blue-light-hover};
+  --btn-text-flat: #{$light-blue-text};
+}
+
+.button.button--light-blue.button--filled {
+  color: $white !important;
+}
+
+.button--cyan {
+  --btn-bg-filled: #{$cyan-filled};
+  --btn-bg-filled-hover: #{$cyan-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$cyan-outline-hover};
+  --btn-border-outline: #{$cyan-outline};
+  --btn-text-outline: #{$cyan-text};
+
+  --btn-bg-flat-hover: #{$cyan-light-hover};
+  --btn-text-flat: #{$cyan-text};
+}
+
+.button--teal {
+  --btn-bg-filled: #{$teal-filled};
+  --btn-bg-filled-hover: #{$teal-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$teal-outline-hover};
+  --btn-border-outline: #{$teal-outline};
+  --btn-text-outline: #{$teal-text};
+
+  --btn-bg-flat-hover: #{$teal-light-hover};
+  --btn-text-flat: #{$teal-text};
+}
+
+.button--amber {
+  --btn-bg-filled: #{$amber-6};
+  --btn-bg-filled-hover: #{$primary-filled-hover};
+  --btn-text-filled: $dark;
+
+  --btn-bg-outline-hover: #{$amber-outline-hover};
+  --btn-border-outline: #{$amber-3};
+  --btn-text-outline: #{$amber-6};
+
+  --btn-bg-flat-hover: #{$amber-light-hover};
+  --btn-text-flat: #{$amber-6};
+}
+
+.button--red {
+  --btn-bg-filled: #{$red-6};
+  --btn-bg-filled-hover: #{$red-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$red-outline-hover};
+  --btn-border-outline: #{$red-3};
+  --btn-text-outline: #{$red-6};
+
+  --btn-bg-flat-hover: #{$red-light-hover};
+  --btn-text-flat: #{$red-6};
+}
+
+.button--green {
+  --btn-bg-filled: #{$green-6};
+  --btn-bg-filled-hover: #{$green-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$green-outline-hover};
+  --btn-border-outline: #{$green-3};
+  --btn-text-outline: #{$green-6};
+
+  --btn-bg-flat-hover: #{$green-light-hover};
+  --btn-text-flat: #{$green-6};
+}
+
+.button--grey {
+  --btn-bg-filled: #{$grey-filled};
+  --btn-bg-filled-hover: #{$grey-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$grey-outline-hover};
+  --btn-border-outline: #{$grey-outline};
+  --btn-text-outline: #{$grey-text};
+
+  --btn-bg-flat-hover: #{$grey-light-hover};
+  --btn-text-flat: #{$grey-text};
+}
+
+.button--blue-grey {
+  --btn-bg-filled: #{$blue-grey-6};
+  --btn-bg-filled-hover: #{$blue-grey-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$blue-grey-outline-hover};
+  --btn-border-outline: #{$blue-grey-3};
+  --btn-text-outline: #{$blue-grey-6};
+
+  --btn-bg-flat-hover: #{$blue-grey-light-hover};
+  --btn-text-flat: #{$blue-grey-6};
+}
+
+.button--dark {
+  --btn-bg-filled: #{$dark-6};
+  --btn-bg-filled-hover: #{$dark-filled-hover};
+  --btn-text-filled: $white;
+
+  --btn-bg-outline-hover: #{$dark-outline-hover};
+  --btn-border-outline: #{$dark-3};
+  --btn-text-outline: #{$dark-6};
+
+  --btn-bg-flat-hover: #{$dark-light-hover};
+  --btn-text-flat: #{$dark-6};
+}
+
+.button.button--filled {
+  background-color: var(--btn-bg-filled);
+  color: var(--btn-text-filled);
+  border-color: transparent;
+
+  &:hover:not(.button--disabled):not(.button--loading) {
+    background-color: var(--btn-bg-filled-hover);
+  }
+}
+
+.button.button--filled {
+  color: #ffffff !important;
+}
+
+.button.button--outline {
+  background-color: transparent;
+  color: var(--btn-text-outline);
+  border-color: var(--btn-border-outline);
+  border-width: 1px;
+  border-style: solid;
+
+  &:hover:not(.button--disabled):not(.button--loading) {
+    background-color: var(--btn-bg-outline-hover);
+  }
+}
+
+.button.button--flat {
+  background-color: transparent;
+  color: var(--btn-text-flat);
+  border-color: transparent;
+
+  &:hover:not(.button--disabled):not(.button--loading) {
+    background-color: var(--btn-bg-flat-hover);
+  }
+}

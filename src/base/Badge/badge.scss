@@ -1,0 +1,117 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1;
+  position: relative;
+  user-select: none;
+  transition: all 0.2s ease;
+  height: 28px;
+  padding: $spacing-xxs $spacing-sm;
+  font-size: 14px;
+  font-weight: 500;
+  gap: $spacing-xs;
+
+  &--rounded {
+    border-radius: 100px !important;
+  }
+
+  &:not(.badge--rounded) {
+    border-radius: $radius-sm !important;
+  }
+
+  // Variant Logic
+  &--filled {
+    background-color: var(--badge-bg);
+    color: var(--badge-text-on-color);
+    border: none;
+  }
+
+  &--light {
+    background-color: var(--badge-bg-light);
+    color: var(--badge-text);
+    border: none;
+  }
+
+  &--outline {
+    background-color: transparent;
+    color: var(--badge-text);
+    border: 1px solid var(--badge-border);
+  }
+
+  // Status Dot Mode (Anatomy: Anatomy 2 in your image)
+  &--dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    min-width: 8px;
+    border-radius: 50% !important;
+    .badge__content {
+      display: none;
+    }
+  }
+
+  &--floating {
+    position: absolute;
+    min-width: 32px;
+    top: -4px;
+    right: -3px;
+    cursor: inherit;
+    z-index: 1;
+  }
+}
+
+.badge__content {
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+}
+
+.badge__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+// Color Mapping (Same pattern as your button)
+.badge--red {
+  --badge-bg: #{$red-filled};
+  --badge-bg-light: #{$red-light}; // Usually 0.1 or 0.12 opacity
+  --badge-text: #{$red-text};
+  --badge-text-on-color: #{$white};
+  --badge-border: #{$red-outline};
+}
+
+.badge--green {
+  --badge-bg: #{$green-filled};
+  --badge-bg-light: #{$green-light};
+  --badge-text: #{$green-text};
+  --badge-text-on-color: #{$white};
+  --badge-border: #{$green-outline};
+}
+
+.badge--amber {
+  --badge-bg: #{$amber-filled};
+  --badge-bg-light: #{$amber-light};
+  --badge-text: #{$amber-text};
+  --badge-text-on-color: #{$dark};
+  --badge-border: #{$amber-outline};
+}
+
+.badge--light-blue {
+  --badge-bg: #{$light-blue-filled};
+  --badge-bg-light: #{$light-blue-light};
+  --badge-text: #{$light-blue-text};
+  --badge-text-on-color: #{$white};
+  --badge-border: #{$light-blue-outline};
+}
+
+.badge--grey {
+  --badge-bg: #{$grey-filled};
+  --badge-bg-light: #{$grey-light};
+  --badge-text: #{$grey-text};
+  --badge-text-on-color: #{$white};
+  --badge-border: #{$grey-outline};
+}

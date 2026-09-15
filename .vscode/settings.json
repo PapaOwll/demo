@@ -1,0 +1,27 @@
+{
+  "vetur.validation.template": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+    "source.fixAll.format": "always"
+  },
+  // Add those two lines:
+  "editor.formatOnSave": true, // Tell VSCode to format files on save
+  "editor.formatOnPaste": true,
+  "editor.defaultFormatter": "rvest.vs-code-prettier-eslint", // Tell VSCode to use Prettier as default file formatter
+  "cSpell.language": "en,fa",
+  "eslint.validate": ["javascript", "vue"],
+  "eslint.format.enable": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "cSpell.words": [
+    "Snakize"
+  ],
+  "stylelint.validate": ["css", "scss", "postcss"]
+}

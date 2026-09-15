@@ -1,0 +1,1 @@
+export { useTaskInfinityQuery } from './query'

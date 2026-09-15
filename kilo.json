@@ -1,0 +1,6 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "instructions": ["UI_FRAMEWORKS_REFERENCE.md"],
+  "mcp": {},
+  "snapshot": false
+}

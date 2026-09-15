@@ -1,0 +1,83 @@
+stages:
+  - lint
+  - build
+  - storybook
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  FORCE_COLOR: 1
+  EARTHLY_EXEC_CMD: "/bin/bash"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  STORAGE_DRIVER: overlay
+  KUBERNETES_MEMORY_REQUEST: "4Gi"
+  KUBERNETES_MEMORY_LIMIT: "4Gi"
+
+######################## lint ########################
+lint-job:
+  stage: lint
+  image: node:20
+  before_script:
+    - npm config set registry "https://mirror-npm.runflare.com"
+    - npm install
+    - git fetch origin master --unshallow  # Fetch the full history of the master branch
+  script:
+    - |
+      # Get the list of all changed files compared to the master branch
+      CHANGED_FILES=$(git diff --diff-filter=d --name-only FETCH_HEAD...HEAD)
+
+      # Filter for JavaScript and JSX files
+      JS_FILES=$(echo "$CHANGED_FILES" | grep -E '\.js$|\.vue$' || true)
+
+      # Lint the filtered files
+      if [ -n "$JS_FILES" ]; then
+        npx eslint $JS_FILES
+      else
+        echo "No JavaScript or JSX files to lint."
+      fi
+  only:
+    - merge_requests
+
+build:
+  stage: build
+  image:
+    name: cr.signaldev.ir/tools/buildah
+  only:
+    - tags
+    - dev
+  script:
+    - buildah login -u ${CONTAINER_IMAGE_REGISTRY_USERNAME} -p ${CONTAINER_IMAGE_REGISTRY_PASSWORD} ${CONTAINER_IMAGE_REGISTRY}
+    - |
+      bash -c 'if [[ "${CI_COMMIT_REF_NAME}" =~ ${SEMVER_REGEX} ]]; then exit 0; else exit 1; fi' && export REF_NAME=${CI_COMMIT_REF_NAME} || export REF_NAME=stage
+      # App version: strip leading "v" from the tag; fall back to short SHA for non-tag (dev/stage) builds.
+      VERSION="${CI_COMMIT_TAG#v}"
+      export APP_VERSION="${VERSION:-${CI_COMMIT_SHORT_SHA}}"
+      buildah build \
+        --build-arg APP_VERSION="${APP_VERSION}" \
+        -t $CONTAINER_IMAGE_PREFIX/crm-front:${REF_NAME} .
+      buildah push $CONTAINER_IMAGE_PREFIX/crm-front:${REF_NAME}
+
+storybook-build:
+  stage: storybook
+  image:
+    name: cr.signaldev.ir/tools/buildah
+  only:
+    - tags
+  when: manual
+  before_script:
+    - buildah login -u ${CONTAINER_IMAGE_REGISTRY_USERNAME} -p ${CONTAINER_IMAGE_REGISTRY_PASSWORD} ${CONTAINER_IMAGE_REGISTRY}
+  script:
+    - |
+      # Resolve ref name safely (default to stage if empty/non-semver)
+      if [[ -n "${CI_COMMIT_REF_NAME}" && "${CI_COMMIT_REF_NAME}" =~ ${SEMVER_REGEX} ]]; then
+        export REF_NAME="${CI_COMMIT_REF_NAME}"
+      elif [[ -n "${CI_COMMIT_REF_NAME}" ]]; then
+        export REF_NAME="${CI_COMMIT_REF_NAME}"
+      else
+        export REF_NAME="stage"
+      fi
+      export STORYBOOK_REF_NAME="${REF_NAME}-storybook"
+      buildah build \
+        -t $CONTAINER_IMAGE_PREFIX/crm-front-storybook:${STORYBOOK_REF_NAME} \
+        -f Dockerfile.storybook .
+      buildah push $CONTAINER_IMAGE_PREFIX/crm-front-storybook:${STORYBOOK_REF_NAME}

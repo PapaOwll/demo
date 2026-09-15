@@ -1,0 +1,131 @@
+.item-table {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  cursor: pointer;
+  z-index: 1;
+  overflow: hidden;
+  padding: 0 $spacing-lg;
+  gap: $spacing-xs;
+
+  &:focus-visible {
+    outline: 2px solid var(--q-primary);
+    outline-offset: 2px;
+  }
+
+  &--header {
+    height: 48px;
+    background-color: $grey-2;
+  }
+
+  &--cell {
+    height: 72px;
+    background-color: $white;
+    border-bottom: 1px solid $grey-3;
+
+    &:hover {
+      background-color: $bg-gray-light;
+    }
+  }
+
+  &--active {
+    background-color: $blue-grey-1;
+  }
+
+  &--no-label {
+    justify-content: center;
+  }
+
+  &--swap.item-table--cell {
+    justify-content: center;
+    gap: $spacing-xs;
+    padding: 0;
+
+    .item-table__content {
+      z-index: 1;
+    }
+
+    .item-table__swap-container {
+      width: 80px;
+      height: 40px;
+      background-color: $grey-outline;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .item-table__icon-container--fixed {
+      width: 32px;
+      height: 32px;
+      background-color: $white;
+      border: 1px solid $grey-3;
+      border-radius: $radius-xs;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s ease;
+    }
+
+    &:hover .item-table__icon-container--fixed {
+      border-color: transparent;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: 0;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 112px;
+      height: 100%;
+      transform: translateX(-50%);
+      background-color: $bg-gray-light;
+      border-radius: $radius-sm;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &:hover::before {
+      opacity: 1;
+      width: 100%;
+      border-radius: 0;
+    }
+  }
+}
+
+.item-table__icon-container {
+  color: $grey-7;
+  flex-shrink: 0;
+}
+
+.item-table__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.item-table__title {
+  font-weight: 500;
+}
+
+.item-table__description {
+  color: $gray-700;
+}
+
+.item-table__sort-icon {
+  display: flex;
+  align-items: center;
+  margin-inline-start: auto;
+  color: $grey-5;
+}
+
+.item-table__action {
+  display: flex;
+  align-items: center;
+  margin-inline-start: auto;
+}

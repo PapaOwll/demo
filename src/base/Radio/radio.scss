@@ -1,0 +1,123 @@
+.custom-radio {
+  --radio-point-color: #{$white};
+  --radio-border-color: #{$dark-3};
+  --radio-border-active: #{$blue-filled};
+  --radio-hover-glow: rgba($blue-filled, $opacity-light-hover);
+
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+
+  &__container {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    direction: rtl;
+  }
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__label {
+    font-size: 16px;
+    color: $dark;
+    font-weight: 500;
+  }
+
+  &__description {
+    font-size: 12px;
+    color: $body;
+    font-weight: 400;
+  }
+
+  &__indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid var(--radio-border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    background: $white;
+    box-sizing: border-box;
+  }
+
+  &__point {
+    width: 0;
+    height: 0;
+    background-color: var(--radio-point-color);
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    z-index: 1;
+  }
+
+  &--checked {
+    .custom-radio__indicator {
+      border-width: 7px;
+      border-color: var(--radio-border-active);
+    }
+    .custom-radio__point {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  &:hover:not(.custom-radio--disabled) {
+    .custom-radio__indicator {
+      box-shadow: 0 0 0 6px var(--radio-hover-glow);
+
+      &:not(.custom-radio--checked &) {
+        border-color: var(--radio-border-active);
+      }
+    }
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    .custom-radio__indicator {
+      background: $grey-2;
+    }
+  }
+
+  &--sm {
+    .custom-radio__label {
+      font-size: 14px;
+    }
+
+    .custom-radio__indicator {
+      width: 20px;
+      height: 20px;
+    }
+    &.custom-radio--checked {
+      .custom-radio__indicator {
+        border-width: 6px;
+      }
+      .custom-radio__point {
+        width: 8px;
+        height: 8px;
+      }
+    }
+    &:hover:not(.custom-radio--disabled) {
+      .custom-radio__indicator {
+        box-shadow: 0 0 0 5px var(--radio-hover-glow);
+      }
+    }
+  }
+
+  &--orange {
+    --radio-border-active: #{$amber-filled};
+    --radio-hover-glow: rgba($amber-filled, $opacity-light-hover);
+  }
+
+  &--flip {
+    .custom-radio__container {
+      flex-direction: row-reverse;
+    }
+  }
+}

@@ -1,0 +1,130 @@
+.modal {
+  // Theming tokens — override via the `cardClass` prop or inline style to
+  // restyle a modal without touching the base styles.
+  --modal-padding: #{$spacing-xl};
+  --modal-gap: #{$spacing-xl};
+  --modal-radius: #{$radius-lg};
+  --modal-border-color: #{$default-border};
+  --modal-shadow: 0 4px 12px 0 rgba(105, 117, 134, 0.1);
+
+  border-radius: var(--modal-radius);
+  border: 1px solid var(--modal-border-color);
+  box-shadow: var(--modal-shadow);
+  padding: var(--modal-padding);
+  display: flex;
+  flex-flow: column;
+  width: 100%;
+  max-width: none !important;
+  gap: var(--modal-gap);
+  position: relative;
+  background-color: var(--modal-bg-color, #{$white});
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    &-titles {
+      display: flex;
+      flex-flow: column;
+      gap: $spacing-xxs;
+    }
+  }
+
+  &__close-standalone {
+    position: absolute;
+    top: $spacing-xl;
+    inset-inline-start: $spacing-xl;
+    z-index: 1;
+    border-radius: $radius-sm;
+  }
+
+  &__body {
+    display: flex;
+    flex-flow: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: $spacing-md;
+    padding-top: $spacing-xl;
+    padding-right: var(--modal-padding);
+    padding-left: var(--modal-padding);
+    margin-right: calc(-1 * var(--modal-padding));
+    margin-left: calc(-1 * var(--modal-padding));
+    border-top: 1px solid var(--modal-border-color);
+  }
+
+  &--no-header {
+    .modal__body:first-child {
+      margin-top: $spacing-sm;
+    }
+  }
+
+  &--drawer {
+    --modal-padding: 0;
+    --modal-gap: 0;
+
+    // In flow on purpose: the card must size the QDialog inner container for
+    // the slide transitions to be visible (they translate that container by
+    // its own size — an absolutely-positioned card leaves it with zero size).
+    // !important is required: the base .modal sets `max-width: none !important`
+    // and Quasar's minimized-dialog rule caps max-height at `calc(100vh - 48px)`.
+    max-height: none !important;
+    border-width: 0;
+
+    .modal__header {
+      padding: $spacing-md $spacing-lg;
+      border-bottom: 1px solid var(--modal-border-color);
+    }
+
+    .modal__body {
+      min-height: 0;
+    }
+  }
+
+  &--drawer-left,
+  &--drawer-right {
+    // Sized by the `width` prop; cap so wide drawers never overflow the viewport.
+    max-width: 92vw !important;
+  }
+
+  // Side anchoring lives on the card, not on Quasar's container: this app loads
+  // quasar.rtl.css *and* the non-RTL core sass, so both the ltr (`left: 0`) and
+  // rtl (`right: 0`) flavors of `.fixed-left`/`.fixed-right` apply and the
+  // `.q-dialog__inner` container ends up pinned on both sides — a full-width
+  // rail. Quasar's position classes (`fixed-left/right items-center`) carry no
+  // justify-* rule, so every drawer would fall back to
+  // `justify-content: flex-start` and stack on the same edge. Logical auto
+  // margins pin each side deterministically: 'left' → inline-start edge,
+  // 'right' → inline-end edge (physical sides flip with `dir`, matching
+  // Quasar's own fixed-left/fixed-right semantics). Cards stay in-flow, so the
+  // slide transitions keep working.
+  &--drawer-left {
+    margin-inline-start: $spacing-2xl;
+    margin-inline-end: auto;
+  }
+
+  &--drawer-right {
+    margin-inline-start: auto;
+    margin-inline-end: $spacing-2xl;
+  }
+
+  // Horizontal sheets — full viewport width, anchored via the QDialog position
+  // (top/bottom) container; height comes from the `height` prop or cardClass.
+  &--drawer-top,
+  &--drawer-bottom {
+    width: 100%;
+  }
+}

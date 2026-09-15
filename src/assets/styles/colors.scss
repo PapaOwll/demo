@@ -1,0 +1,626 @@
+// ============================================
+// Quasar Default Color Palette (14 shades each)
+// ============================================
+
+// ============================================
+// Opacity Variables
+// ============================================
+$opacity-light: 0.1 !default;
+$opacity-light-hover: 0.12 !default;
+$opacity-outline-hover: 0.05 !default;
+
+// Red
+$red-1: #ffebee !default;
+$red-2: #ffcdd2 !default;
+$red-3: #ef9a9a !default;
+$red-4: #e57373 !default;
+$red-5: #ef5350 !default;
+$red-6: #f44336 !default;
+$red-7: #e53935 !default;
+$red-8: #d32f2f !default;
+$red-9: #c62828 !default;
+$red-10: #b71c1c !default;
+$red-11: #8e0000 !default;
+$red-12: #6d0000 !default;
+$red-13: #4d0000 !default;
+$red-14: #2e0000 !default;
+// Red variants
+$red-text: $red-6 !default;
+$red-filled: $red-6 !default;
+$red-filled-hover: $red-7 !default;
+$red-light: rgba($red-6, $opacity-light) !default;
+$red-light-hover: rgba($red-6, $opacity-light-hover) !default;
+$red-outline: $red-2 !default;
+$red-outline-hover: rgba($red-6, $opacity-outline-hover) !default;
+
+// Pink
+$pink-1: #fce4ec !default;
+$pink-2: #f8bbd0 !default;
+$pink-3: #f48fb1 !default;
+$pink-4: #f06292 !default;
+$pink-5: #ec407a !default;
+$pink-6: #e91e63 !default;
+$pink-7: #d81b60 !default;
+$pink-8: #c2185b !default;
+$pink-9: #ad1457 !default;
+$pink-10: #880e4f !default;
+$pink-11: #6d0039 !default;
+$pink-12: #52002b !default;
+$pink-13: #38001e !default;
+$pink-14: #1e0011 !default;
+// Pink variants
+$pink-text: $pink-6 !default;
+$pink-filled: $pink-6 !default;
+$pink-filled-hover: $pink-7 !default;
+$pink-light: rgba($pink-6, $opacity-light) !default;
+$pink-light-hover: rgba($pink-6, $opacity-light-hover) !default;
+$pink-outline: $pink-2 !default;
+$pink-outline-hover: rgba($pink-6, $opacity-outline-hover) !default;
+
+// Purple
+$purple-1: #f3e5f5 !default;
+$purple-2: #e1bee7 !default;
+$purple-3: #ce93d8 !default;
+$purple-4: #ba68c8 !default;
+$purple-5: #ab47bc !default;
+$purple-6: #9c27b0 !default;
+$purple-7: #8e24aa !default;
+$purple-8: #7b1fa2 !default;
+$purple-9: #6a1b9a !default;
+$purple-10: #4a148c !default;
+$purple-11: #38006b !default;
+$purple-12: #27004d !default;
+$purple-13: #180033 !default;
+$purple-14: #0a001a !default;
+// Purple variants
+$purple-text: $purple-6 !default;
+$purple-filled: $purple-6 !default;
+$purple-filled-hover: $purple-7 !default;
+$purple-light: rgba($purple-6, $opacity-light) !default;
+$purple-light-hover: rgba($purple-6, $opacity-light-hover) !default;
+$purple-outline: $purple-2 !default;
+$purple-outline-hover: rgba($purple-6, $opacity-outline-hover) !default;
+
+// Deep Purple
+$deep-purple-1: #ede7f6 !default;
+$deep-purple-2: #d1c4e9 !default;
+$deep-purple-3: #b39ddb !default;
+$deep-purple-4: #9575cd !default;
+$deep-purple-5: #7e57c2 !default;
+$deep-purple-6: #673ab7 !default;
+$deep-purple-7: #5e35b1 !default;
+$deep-purple-8: #512da8 !default;
+$deep-purple-9: #4527a0 !default;
+$deep-purple-10: #311b92 !default;
+$deep-purple-11: #231171 !default;
+$deep-purple-12: #180a52 !default;
+$deep-purple-13: #0e0536 !default;
+$deep-purple-14: #05011b !default;
+// Deep Purple variants
+$deep-purple-text: $deep-purple-6 !default;
+$deep-purple-filled: $deep-purple-6 !default;
+$deep-purple-filled-hover: $deep-purple-7 !default;
+$deep-purple-light: rgba($deep-purple-6, $opacity-light) !default;
+$deep-purple-light-hover: rgba($deep-purple-6, $opacity-light-hover) !default;
+$deep-purple-outline: $deep-purple-2 !default;
+$deep-purple-outline-hover: rgba($deep-purple-6, $opacity-outline-hover) !default;
+
+// Indigo
+$indigo-1: #e8eaf6 !default;
+$indigo-2: #c5cae9 !default;
+$indigo-3: #9fa8da !default;
+$indigo-4: #7986cb !default;
+$indigo-5: #5c6bc0 !default;
+$indigo-6: #3f51b5 !default;
+$indigo-7: #3949ab !default;
+$indigo-8: #303f9f !default;
+$indigo-9: #283593 !default;
+$indigo-10: #1a237e !default;
+$indigo-11: #121862 !default;
+$indigo-12: #0b0e47 !default;
+$indigo-13: #05072d !default;
+$indigo-14: #010214 !default;
+// Indigo variants
+$indigo-text: $indigo-6 !default;
+$indigo-filled: $indigo-6 !default;
+$indigo-filled-hover: $indigo-7 !default;
+$indigo-light: rgba($indigo-6, $opacity-light) !default;
+$indigo-light-hover: rgba($indigo-6, $opacity-light-hover) !default;
+$indigo-outline: $indigo-2 !default;
+$indigo-outline-hover: rgba($indigo-6, $opacity-outline-hover) !default;
+
+// Blue
+$blue-1: #e3f2fd !default;
+$blue-2: #bbdefb !default;
+$blue-3: #90caf9 !default;
+$blue-4: #64b5f6 !default;
+$blue-5: #42a5f5 !default;
+$blue-6: #2196f3 !default;
+$blue-7: #1e88e5 !default;
+$blue-8: #1976d2 !default;
+$blue-9: #1565c0 !default;
+$blue-10: #0d47a1 !default;
+$blue-11: #083580 !default;
+$blue-12: #04245f !default;
+$blue-13: #02163f !default;
+$blue-14: #000920 !default;
+// Blue variants
+$blue-text: $blue-6 !default;
+$blue-filled: $blue-6 !default;
+$blue-filled-hover: $blue-7 !default;
+$blue-light: rgba($blue-6, $opacity-light) !default;
+$blue-light-hover: rgba($blue-6, $opacity-light-hover) !default;
+$blue-outline: $blue-2 !default;
+$blue-outline-hover: rgba($blue-6, $opacity-outline-hover) !default;
+
+// Light Blue
+// $light-blue-1: #e1f5fe !default;
+// $light-blue-2: #b3e5fc !default;
+// $light-blue-3: #81d4fa !default;
+// $light-blue-4: #4fc3f7 !default;
+// $light-blue-5: #29b6f6 !default;
+// $light-blue-6: #03a9f4 !default;
+// $light-blue-7: #039be5 !default;
+// $light-blue-8: #0288d1 !default;
+// $light-blue-9: #0277bd !default;
+// $light-blue-10: #01579b !default;
+// $light-blue-11: #01447a !default;
+$light-blue-1: #ebf2fa;
+$light-blue-2: #c3d9f4;
+$light-blue-3: #98bdf1;
+$light-blue-4: #699ef2;
+$light-blue-5: #367cf7;
+$light-blue-6: #0055ff;
+$light-blue-7: #0d50c4;
+$light-blue-8: #14458f;
+$light-blue-9: #163660;
+$light-blue-10: #122336;
+$light-blue-11: #080d12;
+$light-blue-12: #01315a !default;
+$light-blue-13: #001f3b !default;
+$light-blue-14: #000e1d !default;
+// Light Blue variants
+$light-blue-text: $light-blue-6 !default;
+$light-blue-filled: $light-blue-6 !default;
+$light-blue-filled-hover: $light-blue-7 !default;
+$light-blue-light: rgba($light-blue-6, $opacity-light) !default;
+$light-blue-light-hover: rgba($light-blue-6, $opacity-light-hover) !default;
+$light-blue-outline: $light-blue-2 !default;
+$light-blue-outline-hover: rgba($light-blue-6, $opacity-outline-hover) !default;
+
+// Cyan
+$cyan-1: #e0f7fa !default;
+$cyan-2: #b2ebf2 !default;
+$cyan-3: #80deea !default;
+$cyan-4: #4dd0e1 !default;
+$cyan-5: #26c6da !default;
+$cyan-6: #00bcd4 !default;
+$cyan-7: #00acc1 !default;
+$cyan-8: #0097a7 !default;
+$cyan-9: #00838f !default;
+$cyan-10: #006064 !default;
+$cyan-11: #004d50 !default;
+$cyan-12: #003a3c !default;
+$cyan-13: #002829 !default;
+$cyan-14: #001516 !default;
+// Cyan variants
+$cyan-text: $cyan-6 !default;
+$cyan-filled: $cyan-6 !default;
+$cyan-filled-hover: $cyan-7 !default;
+$cyan-light: rgba($cyan-6, $opacity-light) !default;
+$cyan-light-hover: rgba($cyan-6, $opacity-light-hover) !default;
+$cyan-outline: $cyan-2 !default;
+$cyan-outline-hover: rgba($cyan-6, $opacity-outline-hover) !default;
+
+// Teal
+$teal-1: #e0f2f1 !default;
+$teal-2: #b2dfdb !default;
+$teal-3: #80cbc4 !default;
+$teal-4: #4db6ac !default;
+$teal-5: #26a69a !default;
+$teal-6: #009688 !default;
+$teal-7: #00897b !default;
+$teal-8: #00796b !default;
+$teal-9: #00695c !default;
+$teal-10: #004d40 !default;
+$teal-11: #003d33 !default;
+$teal-12: #002e26 !default;
+$teal-13: #001f1a !default;
+$teal-14: #00100d !default;
+// Teal variants
+$teal-text: $teal-6 !default;
+$teal-filled: $teal-6 !default;
+$teal-filled-hover: $teal-7 !default;
+$teal-light: rgba($teal-6, $opacity-light) !default;
+$teal-light-hover: rgba($teal-6, $opacity-light-hover) !default;
+$teal-outline: $teal-2 !default;
+$teal-outline-hover: rgba($teal-6, $opacity-outline-hover) !default;
+
+// Green
+$green-1: #e8f5e9 !default;
+$green-2: #c8e6c9 !default;
+$green-3: #a5d6a7 !default;
+$green-4: #81c784 !default;
+$green-5: #66bb6a !default;
+$green-6: #4caf50 !default;
+$green-7: #43a047 !default;
+$green-8: #388e3c !default;
+$green-9: #2e7d32 !default;
+$green-10: #1b5e20 !default;
+$green-11: #144a19 !default;
+$green-12: #0d3612 !default;
+$green-13: #07230c !default;
+$green-14: #021006 !default;
+// Green variants
+$green-text: $green-6 !default;
+$green-filled: $green-6 !default;
+$green-filled-hover: $green-7 !default;
+$green-light: rgba($green-6, $opacity-light) !default;
+$green-light-hover: rgba($green-6, $opacity-light-hover) !default;
+$green-outline: $green-2 !default;
+$green-outline-hover: rgba($green-6, $opacity-outline-hover) !default;
+
+// Light Green
+$light-green-1: #f1f8e9 !default;
+$light-green-2: #dcedc8 !default;
+$light-green-3: #c5e1a5 !default;
+$light-green-4: #aed581 !default;
+$light-green-5: #9ccc65 !default;
+$light-green-6: #8bc34a !default;
+$light-green-7: #7cb342 !default;
+$light-green-8: #689f38 !default;
+$light-green-9: #558b2f !default;
+$light-green-10: #33691e !default;
+$light-green-11: #285317 !default;
+$light-green-12: #1d3e11 !default;
+$light-green-13: #132a0b !default;
+$light-green-14: #091606 !default;
+// Light Green variants
+$light-green-text: $light-green-6 !default;
+$light-green-filled: $light-green-6 !default;
+$light-green-filled-hover: $light-green-7 !default;
+$light-green-light: rgba($light-green-6, $opacity-light) !default;
+$light-green-light-hover: rgba($light-green-6, $opacity-light-hover) !default;
+$light-green-outline: $light-green-2 !default;
+$light-green-outline-hover: rgba($light-green-6, $opacity-outline-hover) !default;
+
+// Lime
+$lime-1: #f9fbe7 !default;
+$lime-2: #f0f4c3 !default;
+$lime-3: #e6ee9c !default;
+$lime-4: #dce775 !default;
+$lime-5: #d4e157 !default;
+$lime-6: #cddc39 !default;
+$lime-7: #c0ca33 !default;
+$lime-8: #afb42b !default;
+$lime-9: #9e9d24 !default;
+$lime-10: #827717 !default;
+$lime-11: #685f12 !default;
+$lime-12: #4e470d !default;
+$lime-13: #353009 !default;
+$lime-14: #1c1905 !default;
+// Lime variants
+$lime-text: $lime-6 !default;
+$lime-filled: $lime-6 !default;
+$lime-filled-hover: $lime-7 !default;
+$lime-light: rgba($lime-6, $opacity-light) !default;
+$lime-light-hover: rgba($lime-6, $opacity-light-hover) !default;
+$lime-outline: $lime-2 !default;
+$lime-outline-hover: rgba($lime-6, $opacity-outline-hover) !default;
+
+// Yellow
+$yellow-1: #fffde7 !default;
+$yellow-2: #fff9c4 !default;
+$yellow-3: #fff59d !default;
+$yellow-4: #fff176 !default;
+$yellow-5: #ffee58 !default;
+$yellow-6: #ffeb3b !default;
+$yellow-7: #fdd835 !default;
+$yellow-8: #fbc02d !default;
+$yellow-9: #f9a825 !default;
+$yellow-10: #f57f17 !default;
+$yellow-11: #c46611 !default;
+$yellow-12: #944c0d !default;
+$yellow-13: #643308 !default;
+$yellow-14: #341a04 !default;
+// Yellow variants
+$yellow-text: $yellow-6 !default;
+$yellow-filled: $yellow-6 !default;
+$yellow-filled-hover: $yellow-7 !default;
+$yellow-light: rgba($yellow-6, $opacity-light) !default;
+$yellow-light-hover: rgba($yellow-6, $opacity-light-hover) !default;
+$yellow-outline: $yellow-2 !default;
+$yellow-outline-hover: rgba($yellow-6, $opacity-outline-hover) !default;
+
+// Amber
+// $amber-1: #fff8e1 !default;
+// $amber-2: #ffecb3 !default;
+// $amber-3: #ffe082 !default;
+// $amber-4: #ffd54f !default;
+// $amber-5: #ffca28 !default;
+// $amber-6: #ffc107 !default;
+// $amber-7: #ffb300 !default;
+// $amber-8: #ffa000 !default;
+// $amber-9: #ff8f00 !default;
+// $amber-10: #ff6f00 !default;
+// $amber-11: #cc5900 !default;
+$amber-1: #fffbf3;
+$amber-2: #ffeecc;
+$amber-3: #ffe2a6;
+$amber-4: #fed680;
+$amber-5: #feca5a;
+$amber-6: #fdbe34;
+$amber-7: #fcb20e;
+$amber-8: #de9b05;
+$amber-9: #b78107;
+$amber-10: #906607;
+$amber-11: #6a4c06;
+$amber-12: #994300 !default;
+$amber-13: #662d00 !default;
+$amber-14: #331700 !default;
+// Amber variants
+$amber-text: $amber-6 !default;
+$amber-filled: $amber-6 !default;
+$amber-filled-hover: $amber-7 !default;
+$amber-light: rgba($amber-6, $opacity-light) !default;
+$amber-light-hover: rgba($amber-6, $opacity-light-hover) !default;
+$amber-outline: $amber-2 !default;
+$amber-outline-hover: rgba($amber-6, $opacity-outline-hover) !default;
+
+// Orange
+$orange-1: #fff3e0 !default;
+$orange-2: #ffe0b2 !default;
+$orange-3: #ffcc80 !default;
+$orange-4: #ffb74d !default;
+$orange-5: #ffa726 !default;
+$orange-6: #ff9800 !default;
+$orange-7: #fb8c00 !default;
+$orange-8: #f57c00 !default;
+$orange-9: #ef6c00 !default;
+$orange-10: #e65100 !default;
+$orange-11: #b84100 !default;
+$orange-12: #8a3000 !default;
+$orange-13: #5c2000 !default;
+$orange-14: #2e1000 !default;
+// Orange variants
+$orange-text: $orange-6 !default;
+$orange-filled: $orange-6 !default;
+$orange-filled-hover: $orange-7 !default;
+$orange-light: rgba($orange-6, $opacity-light) !default;
+$orange-light-hover: rgba($orange-6, $opacity-light-hover) !default;
+$orange-outline: $orange-2 !default;
+$orange-outline-hover: rgba($orange-6, $opacity-outline-hover) !default;
+
+// Deep Orange
+$deep-orange-1: #fbe9e7 !default;
+$deep-orange-2: #ffccbc !default;
+$deep-orange-3: #ffab91 !default;
+$deep-orange-4: #ff8a65 !default;
+$deep-orange-5: #ff7043 !default;
+$deep-orange-6: #ff5722 !default;
+$deep-orange-7: #f4511e !default;
+$deep-orange-8: #e64a19 !default;
+$deep-orange-9: #d84315 !default;
+$deep-orange-10: #bf360c !default;
+$deep-orange-11: #992b09 !default;
+$deep-orange-12: #732007 !default;
+$deep-orange-13: #4d1605 !default;
+$deep-orange-14: #260b02 !default;
+// Deep Orange variants
+$deep-orange-text: $deep-orange-6 !default;
+$deep-orange-filled: $deep-orange-6 !default;
+$deep-orange-filled-hover: $deep-orange-7 !default;
+$deep-orange-light: rgba($deep-orange-6, $opacity-light) !default;
+$deep-orange-light-hover: rgba($deep-orange-6, $opacity-light-hover) !default;
+$deep-orange-outline: $deep-orange-2 !default;
+$deep-orange-outline-hover: rgba($deep-orange-6, $opacity-outline-hover) !default;
+
+// Brown
+$brown-1: #efebe9 !default;
+$brown-2: #d7ccc8 !default;
+$brown-3: #bcaaa4 !default;
+$brown-4: #a1887f !default;
+$brown-5: #8d6e63 !default;
+$brown-6: #795548 !default;
+$brown-7: #6d4c41 !default;
+$brown-8: #5d4037 !default;
+$brown-9: #4e342e !default;
+$brown-10: #3e2723 !default;
+$brown-11: #321f1c !default;
+$brown-12: #251715 !default;
+$brown-13: #190f0e !default;
+$brown-14: #0d0807 !default;
+// Brown variants
+$brown-text: $brown-6 !default;
+$brown-filled: $brown-6 !default;
+$brown-filled-hover: $brown-7 !default;
+$brown-light: rgba($brown-6, $opacity-light) !default;
+$brown-light-hover: rgba($brown-6, $opacity-light-hover) !default;
+$brown-outline: $brown-2 !default;
+$brown-outline-hover: rgba($brown-6, $opacity-outline-hover) !default;
+
+// Grey
+$grey-1: #fafafa !default;
+$grey-2: #f5f5f5 !default;
+$grey-3: #eeeeee !default;
+$grey-4: #e0e0e0 !default;
+$grey-5: #bdbdbd !default;
+$grey-6: #9e9e9e !default;
+$grey-7: #757575 !default;
+$grey-8: #616161 !default;
+$grey-9: #424242 !default;
+$grey-10: #212121 !default;
+$grey-11: #1a1a1a !default;
+$grey-12: #141414 !default;
+$grey-13: #0d0d0d !default;
+$grey-14: #070707 !default;
+// Grey variants
+$grey-text: $grey-6 !default;
+$grey-filled: $grey-6 !default;
+$grey-filled-hover: $grey-7 !default;
+$grey-light: rgba($grey-6, $opacity-light) !default;
+$grey-light-hover: rgba($grey-6, $opacity-light-hover) !default;
+$grey-outline: $grey-2 !default;
+$grey-outline-hover: rgba($grey-6, $opacity-outline-hover) !default;
+
+// Blue Grey
+// $blue-grey-1: #eceff1 !default;
+// $blue-grey-2: #cfd8dc !default;
+// $blue-grey-3: #b0bec5 !default;
+// $blue-grey-4: #90a4ae !default;
+// $blue-grey-5: #78909c !default;
+// $blue-grey-6: #607d8b !default;
+// $blue-grey-7: #546e7a !default;
+// $blue-grey-8: #455a64 !default;
+// $blue-grey-9: #37474f !default;
+// $blue-grey-10: #263238 !default;
+// $blue-grey-11: #1e282d !default;
+$blue-grey-1: #fcfcfd;
+$blue-grey-2: #f8fafc;
+$blue-grey-3: #eef2f6;
+$blue-grey-4: #e3e8ef;
+$blue-grey-5: #cdd5df;
+$blue-grey-6: #9aa4b2;
+$blue-grey-7: #697586;
+$blue-grey-8: #4b5565;
+$blue-grey-9: #364152;
+$blue-grey-10: #202939;
+$blue-grey-11: #121926;
+$blue-grey-12: #171e22 !default;
+$blue-grey-13: #0f1417 !default;
+$blue-grey-14: #080a0b !default;
+// Blue Grey variants
+$blue-grey-text: $blue-grey-6 !default;
+$blue-grey-filled: $blue-grey-6 !default;
+$blue-grey-filled-hover: $blue-grey-7 !default;
+$blue-grey-light: rgba($blue-grey-6, $opacity-light) !default;
+$blue-grey-light-hover: rgba($blue-grey-6, $opacity-light-hover) !default;
+$blue-grey-outline: $blue-grey-2 !default;
+$blue-grey-outline-hover: rgba($blue-grey-6, $opacity-outline-hover) !default;
+
+$dark-1: #b3b3b3;
+$dark-2: #9e9e9e;
+$dark-3: #7a7a7a;
+$dark-4: #666666;
+$dark-5: #474747;
+$dark-6: #2e2e2e;
+$dark-7: #242424;
+$dark-8: #1f1f1f;
+$dark-9: #191919;
+$dark-10: #141414;
+$dark-11: #0a0a0a;
+// Blue Grey variants
+$dark-text: $dark-6 !default;
+$dark-filled: $dark-6 !default;
+$dark-filled-hover: $dark-7 !default;
+$dark-light: rgba($dark-6, $opacity-light) !default;
+$dark-light-hover: rgba($dark-6, $opacity-light-hover) !default;
+$dark-outline: $dark-2 !default;
+$dark-outline-hover: rgba($dark-6, $opacity-outline-hover) !default;
+
+// ============================================
+// Custom Project Colors old
+// ============================================
+
+$primary: #0055ff !default;
+$primary-text: $primary !default;
+$primary-filled: $primary !default;
+$primary-filled-hover: #0044cc !default;
+$primary-outline: rgba($primary, 0.3) !default;
+$primary-outline-hover: rgba($primary, $opacity-outline-hover) !default;
+$primary-light: rgba($primary, $opacity-light) !default;
+$primary-light-hover: rgba($primary, $opacity-light-hover) !default;
+
+$secondary: #909399 !default;
+$accent: #f56c6c !default;
+
+$positive: #6aa43d !default;
+$dark: #1d1d1d !default;
+$mute: rgba(33, 37, 41, 0.6);
+$negative: #f44336 !default;
+$info: #909399 !default;
+$warning: #e6a23c !default;
+$success: #6aa43d !default;
+$danger: #dc3545 !default;
+$error: #f56c6c !default;
+$error-2: #ffa4a4 !default;
+
+$white: #ffff !default;
+$white-2: #f5f7fa !default;
+$white-3: #dcdfe6 !default;
+
+$black: #000 !default;
+$black-2: #303133 !default;
+
+$secondary-bg-subtle: #e2e3e5;
+$tertiary-color: rgba(33, 37, 41, 0.5);
+
+$blue-gray: #6e80a2 !default;
+$blue-white: #ecf5ff !default;
+
+$blue: #409eff !default;
+$blue-2: #c6e2ff !default;
+
+$gray: #606266 !default;
+$gray-2: #909399 !default;
+$gray-050: #fafafa !default;
+$gray-100: #f5f5f5 !default;
+$gray-200: #eeeeee !default;
+$gray-300: #e0e0e0 !default;
+$gray-400: #bdbdbd !default;
+$gray-500: #9e9e9e !default;
+$gray-600: #757575 !default;
+$gray-700: #616161 !default;
+$gray-800: #424242 !default;
+$gray-900: #212121 !default;
+
+$green: #67c23a !default;
+
+$gray-text-2: #909399 !default;
+$gray-text: #606266 !default;
+
+$gray-border: #dcdfe6 !default;
+
+$charcoal-black: #303133 !default;
+
+$light: $gray-100 !default;
+$bg-gray: #f7f9fb;
+$bg-gray-light: #fafafa;
+
+// ============================================
+// Custom Project Colors new
+// ============================================
+
+$text: $dark;
+$body: $grey-8;
+$placeholder: $grey-5;
+$bright: $white;
+$error: $red-6;
+$anchor: $blue-6;
+$default-border: $grey-4;
+$border-secondary: #e9eaeb;
+$default-hover: $grey-1;
+$default-disabled-bg: $grey-2;
+$default-disabled-text: $grey-6;
+$default-disabled-border: $grey-3;
+
+// Spacing
+$spacing-none: 0;
+$spacing-xxs: 2px;
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+$spacing-2xl: 32px;
+$spacing-3xl: 40px;
+
+// Radius
+$radius-none: 0;
+$radius-xs: 4px;
+$radius-sm: 8px;
+$radius-md: 12px;
+$radius-lg: 16px;
+$radius-xl: 24px;
+$radius-2xl: 32px;
+$radius-round: 50%;

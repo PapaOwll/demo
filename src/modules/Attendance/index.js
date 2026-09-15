@@ -1,0 +1,1 @@
+export { useAttendanceInfinityQuery } from './query'

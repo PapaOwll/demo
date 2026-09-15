@@ -1,0 +1,58 @@
+export const tableColumns = [
+  {
+    name: 'dateCode',
+    label: 'تاریخ ثبت',
+    field: 'date',
+    sortable: false,
+    align: 'left',
+  },
+  {
+    name: 'status',
+    label: 'وضعیت',
+    field: 'status',
+    sortable: false,
+    align: 'left',
+  },
+  {
+    name: 'serviceArea',
+    label: 'نوع / ناحیه خدمت',
+    field: 'serviceType',
+    sortable: false,
+    align: 'left',
+  },
+  {
+    name: 'specialServices',
+    label: 'خدمات اختصاصی',
+    field: 'specialServices',
+    sortable: false,
+    align: 'left',
+  },
+  {
+    name: 'unit',
+    label: 'واحد',
+    field: 'unit',
+    sortable: false,
+    align: 'left',
+  },
+  {
+    name: 'cost',
+    label: 'هزینه',
+    field: 'cost',
+    sortable: false,
+    align: 'left',
+  },
+  {
+    name: 'doctor',
+    label: 'دکتر',
+    field: 'doctor',
+    sortable: false,
+    align: 'left',
+  },
+  {
+    name: 'actions',
+    label: '',
+    field: 'actions',
+    sortable: false,
+    align: 'center',
+  },
+]
