@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 4000 --host 0.0.0.0",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' vite build && node scripts/make-404-page.js",
     "analyze": "vite build --mode analyze",
     "preview": "vite preview",
     "build-only": "vite build",

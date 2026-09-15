@@ -19,7 +19,12 @@ export default defineConfig(({ mode }) => {
 
   const isAnalyzeMode = mode === 'analyze'
 
+  // Subpath deployments (e.g. GitHub Pages project sites) set VITE_BASE_PATH
+  // to their subpath (like '/demo/'); root deployments leave it unset.
+  const basePath = process.env.VITE_BASE_PATH || '/'
+
   return {
+    base: basePath,
     plugins: [
       vue(),
       vueJsx(),

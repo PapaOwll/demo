@@ -29,6 +29,7 @@ coverage
 
 .qodo
 .github
+!.github/workflows/deploy-pages.yml
 .claude
 .kilo/*
 !.kilo/skills/
