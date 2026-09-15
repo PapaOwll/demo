@@ -52,10 +52,7 @@
                   class="intro-form__guide-illustration"
                   @click="openImagePreview"
                 >
-                  <img
-                    :src="`${import.meta.env.BASE_URL}img/intro-v2.png`"
-                    alt="راهنمای جایگذاری آیکون"
-                  />
+                  <img :src="introImageUrl" alt="راهنمای جایگذاری آیکون" />
                   <IconArrowsMaximize size="32" class="intro-form__guide-illustration-zoom" />
                 </button>
               </div>
@@ -135,16 +132,15 @@
     @close="isImagePreviewOpen = false"
     @update:model-value="isImagePreviewOpen = $event"
   >
-    <img
-      :src="`${import.meta.env.BASE_URL}img/intro-v2.png`"
-      alt="راهنمای جایگذاری آیکون"
-      class="intro-form__image-preview-img"
-    />
+    <img :src="introImageUrl" alt="راهنمای جایگذاری آیکون" class="intro-form__image-preview-img" />
   </Modal>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+
+const introImageUrl = `${import.meta.env.BASE_URL}img/intro-v2.png`
+
 import { QForm, QSlideTransition, QSpinnerDots } from 'quasar'
 import {
   IconChevronUp,

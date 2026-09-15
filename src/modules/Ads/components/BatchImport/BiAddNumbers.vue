@@ -73,11 +73,7 @@
               <span class="hint-desc">موبایل | نام | نام خانوادگی | استان | شهر</span>
             </QChip>
             <div class="row q-mt-sm">
-              <a
-                :href="`${import.meta.env.BASE_URL}files/sample.xlsx`"
-                download
-                class="download-link"
-              >
+              <a :href="sampleXlsxUrl" download class="download-link">
                 <IconDownload size="16" />
                 <span>دانلود فایل نمونه</span>
               </a>
@@ -110,6 +106,9 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+
+const sampleXlsxUrl = `${import.meta.env.BASE_URL}files/sample.xlsx`
+
 import {
   IconPencilPlus,
   IconAlertTriangle,
