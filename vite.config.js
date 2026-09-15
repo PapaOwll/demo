@@ -7,9 +7,6 @@ import { fileURLToPath, URL } from 'node:url'
 import { readFileSync } from 'node:fs'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import { visualizer } from 'rollup-plugin-visualizer'
-// GlitchTip speaks the Sentry release/artifact API, so the Sentry vite plugin is used
-// as the source map uploader, pointed at the GlitchTip instance.
-import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { quasar } from '@quasar/vite-plugin'
 
 // Version source of truth: APP_VERSION injected at build time (from the git tag in CI).
@@ -21,11 +18,6 @@ export default defineConfig(({ mode }) => {
   process.env = { ...process.env, ...loadEnv(mode, process.cwd()) }
 
   const isAnalyzeMode = mode === 'analyze'
-
-  // Source maps are only emitted when they can actually be uploaded, so that build
-  // artifacts are never left behind and served publicly by nginx.
-  const glitchtipAuthToken = process.env.VITE_GLITCHTIP_AUTH_TOKEN
-  const shouldUploadSourcemaps = mode === 'production' && Boolean(glitchtipAuthToken)
 
   return {
     plugins: [
@@ -52,33 +44,6 @@ export default defineConfig(({ mode }) => {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
         },
       }),
-      // Upload source maps to GlitchTip - production builds only, and only when an
-      // auth token is provided (see VITE_GLITCHTIP_AUTH_TOKEN in .env.example)
-      shouldUploadSourcemaps &&
-        sentryVitePlugin({
-          org: process.env.VITE_GLITCHTIP_ORG || 'sitra',
-          project: process.env.VITE_GLITCHTIP_PROJECT || 'crm-sitra-front',
-          telemetry: false,
-          url: process.env.VITE_GLITCHTIP_URL || 'https://glitchtip.signaldev.ir/',
-          authToken: glitchtipAuthToken,
-          // Enable Debug ID injection
-          debug: false,
-          sourcemaps: {
-            assets: './dist/**',
-            ignore: ['node_modules', 'public'],
-            filesToDeleteAfterUpload: ['./dist/**/*.map'],
-          },
-          // GlitchTip implements release creation and artifact upload, but not the
-          // commit association / artifact cleanup APIs - so those are left off.
-          release: {
-            name: appVersion,
-          },
-          // Never fail a deploy because the monitoring backend is unreachable
-          errorHandler: (error) => {
-            // eslint-disable-next-line no-console
-            console.warn('[glitchtip] source map upload skipped:', error.message)
-          },
-        }),
       // @quasar/plugin-vite options list:
       // https://github.com/quasarframework/quasar/blob/dev/vite-plugin/index.d.ts
       quasar({
@@ -127,9 +92,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: ['chrome64', 'firefox67', 'safari11.1', 'edge79'],
-      // 'hidden' keeps the sourceMappingURL comment out of the shipped bundles;
-      // the uploader pairs files via injected Debug IDs instead.
-      sourcemap: shouldUploadSourcemaps ? 'hidden' : false,
+      sourcemap: false,
     },
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),

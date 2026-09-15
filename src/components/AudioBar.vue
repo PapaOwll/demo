@@ -124,9 +124,7 @@ const formattedCurrentTime = computed(() => formatTime(currentTime.value))
 
 const fetchAudioBlob = async () => {
   if (audioBlob.value) return audioBlob.value
-  const response = await fetch(
-    `https://panel.seritaclinic.ir/sitak/connect-CRM/CDR/CDRplayer.php?recordingfile=${props.src}`
-  )
+  const response = await fetch(`/mocks/sample-voice.wav?file=${props.src}`)
   if (!response.ok) {
     throw new Error(`HTTP error: ${response.status}`)
   }

@@ -45,7 +45,7 @@
 import axios from 'axios'
 import { computed, onMounted, ref } from 'vue'
 
-const API_URL = 'https://panel.seritaclinic.ir/api/v1/health/check'
+const API_URL = '/api/v1/health/check'
 
 const data = ref([])
 const loading = ref(false)

@@ -53,6 +53,9 @@ function getTracesSampleRate() {
 }
 
 function initializeGlitchtip() {
+  // Error tracking is opt-in: without a DSN the SDK is never initialized.
+  if (!import.meta.env.VITE_GLITCHTIP_DSN) return
+
   const isProduction = import.meta.env.VITE_NODE_ENV === 'production'
 
   init({

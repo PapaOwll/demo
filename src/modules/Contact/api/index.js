@@ -24,10 +24,7 @@ export const apiGetContactTypes = () =>
   request.get('v1/client/enums', { params: { enums: 'ContactTypeEnum' } })
 
 export const apiGetAudioFile = (file) =>
-  request.get(
-    `https://panel.seritaclinic.ir/sitak/connect-CRM/CDR/CDRplayer.php?recordingfile=${file}`,
-    {
-      responseType: 'blob',
-      timeout: 120_000,
-    }
-  )
+  request.get(`v1/contact/recordings/${file}`, {
+    responseType: 'blob',
+    timeout: 120_000,
+  })

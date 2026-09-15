@@ -349,7 +349,7 @@ const loginAsMyTooth = () => {
     {
       onSuccess: (result) => {
         const token = result?.data?.token
-        const myTeethUrl = import.meta.env.VITE_MY_TEETH_URL || 'https://my.seritaclinic.ir'
+        const myTeethUrl = import.meta.env.VITE_MY_TEETH_URL || '/my-teeth'
         window.open(`${myTeethUrl}/auth/impersonate?token=${token}`, '_blank')
       },
       onError: (error) => {
