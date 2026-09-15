@@ -52,7 +52,10 @@
                   class="intro-form__guide-illustration"
                   @click="openImagePreview"
                 >
-                  <img src="/img/intro-v2.png" alt="راهنمای جایگذاری آیکون" />
+                  <img
+                    :src="`${import.meta.env.BASE_URL}img/intro-v2.png`"
+                    alt="راهنمای جایگذاری آیکون"
+                  />
                   <IconArrowsMaximize size="32" class="intro-form__guide-illustration-zoom" />
                 </button>
               </div>
@@ -133,7 +136,7 @@
     @update:model-value="isImagePreviewOpen = $event"
   >
     <img
-      src="/img/intro-v2.png"
+      :src="`${import.meta.env.BASE_URL}img/intro-v2.png`"
       alt="راهنمای جایگذاری آیکون"
       class="intro-form__image-preview-img"
     />

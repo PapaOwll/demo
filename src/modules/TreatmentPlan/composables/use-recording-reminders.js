@@ -33,7 +33,7 @@ const showBrowserNotification = () => {
       // eslint-disable-next-line no-new
       new Notification('یادآوری ضبط جلسه', {
         body: 'جلسه تموم شد؟ یادت نره جلسه رو قطع کنی.',
-        icon: '/favicon.ico',
+        icon: `${import.meta.env.BASE_URL}favicon.ico`,
         tag: 'recording-reminder',
       })
     } else if ('Notification' in window && Notification.permission !== 'denied') {
@@ -42,7 +42,7 @@ const showBrowserNotification = () => {
           // eslint-disable-next-line no-new
           new Notification('یادآوری ضبط جلسه', {
             body: 'جلسه تموم شد؟ یادت نره جلسه رو قطع کنی.',
-            icon: '/favicon.ico',
+            icon: `${import.meta.env.BASE_URL}favicon.ico`,
             tag: 'recording-reminder',
           })
         }

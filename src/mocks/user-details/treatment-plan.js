@@ -7,7 +7,7 @@ import { daysAgo, mockDelay } from '@/mocks/mock-storage'
  * - plan detail (serves/items/teeth/cheques) so the public preview (/tp/{hashKey}) renders
  */
 
-const sampleVoiceUrl = `${window.location.origin}/mocks/sample-voice.wav`
+const sampleVoiceUrl = `${import.meta.env.BASE_URL}mocks/sample-voice.wav`
 
 const mockUser = (firstName, name) => ({
   firstName,

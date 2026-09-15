@@ -26,7 +26,9 @@ export const apiGetContactTypes = () =>
 // Served from the bundled sample audio file so call playback works without
 // any external telephony backend.
 export const apiGetAudioFile = async (file) => {
-  const response = await fetch(`/mocks/sample-voice.wav?file=${encodeURIComponent(file)}`)
+  const response = await fetch(
+    `${import.meta.env.BASE_URL}mocks/sample-voice.wav?file=${encodeURIComponent(file)}`
+  )
   if (!response.ok) throw new Error(`HTTP error: ${response.status}`)
   return { data: await response.blob() }
 }

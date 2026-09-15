@@ -272,7 +272,7 @@ watch(
             `تماس از ${newCall.data?.id ? newCall.data?.fullName : 'کاربر نامشخص'}`,
             {
               body: newCall.data?.number,
-              icon: '/favicon.ico',
+              icon: `${import.meta.env.BASE_URL}favicon.ico`,
               tag: 'polling-notification',
             }
           )

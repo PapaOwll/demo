@@ -124,7 +124,9 @@ const formattedCurrentTime = computed(() => formatTime(currentTime.value))
 
 const fetchAudioBlob = async () => {
   if (audioBlob.value) return audioBlob.value
-  const response = await fetch(`/mocks/sample-voice.wav?file=${props.src}`)
+  const response = await fetch(
+    `${import.meta.env.BASE_URL}mocks/sample-voice.wav?file=${props.src}`
+  )
   if (!response.ok) {
     throw new Error(`HTTP error: ${response.status}`)
   }

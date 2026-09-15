@@ -69,7 +69,7 @@ async function checkForUpdates() {
   }
 
   try {
-    const response = await fetch('/sw.js', { cache: 'no-store' })
+    const response = await fetch(new URL('sw.js', self.location.href), { cache: 'no-store' })
     const text = await response.text()
     const match = text.match(/BUILD_ID\s*=\s*["']([^"']+)["']/)
     const remoteBuildId = match?.[1]
@@ -95,7 +95,7 @@ self.addEventListener('install', (event) => {
 
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(['/offline.html']).catch((error) => {
+      return cache.addAll([new URL('offline.html', self.location.href).pathname]).catch((error) => {
         console.error('Failed to pre-cache:', error)
         reportToGlitchtip('Failed to pre-cache files during SW install', SW_ERROR_LEVELS.ERROR, {
           errorMessage: error.message,
@@ -155,7 +155,7 @@ registerRoute(
     plugins: [
       {
         handlerDidError: async () => {
-          return caches.match('/offline.html')
+          return caches.match(new URL('offline.html', self.location.href).pathname)
         },
       },
     ],
@@ -292,7 +292,7 @@ self.addEventListener('notificationclick', (event) => {
       if (clientList.length > 0) {
         clientList[0].focus()
       } else {
-        self.clients.openWindow('/')
+        self.clients.openWindow(self.registration.scope)
       }
     })
   )
