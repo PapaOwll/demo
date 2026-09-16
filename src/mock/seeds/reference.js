@@ -70,7 +70,17 @@ export const currentUser = {
     permissions: PERMS,
     modules: [
       mod(1, 'dashboard', 'داشبورد', 'IconLayoutDashboard'),
-      mod(2, 'user', 'کاربران', 'IconUsers', [sub('impersonate', 'جعل هویت')]),
+      mod(2, 'user', 'کاربران', 'IconUsers', [
+        {
+          key: 'impersonate',
+          title: 'جعل هویت',
+          status: 1,
+          // Hidden from the sidebar menu — the permission is still granted,
+          // so the impersonation actions in UserMenu keep working.
+          hidden: true,
+          permissions: PERMS,
+        },
+      ]),
       mod(3, 'visit', 'ویزیت‌ها', 'IconStethoscope'),
       mod(4, 'booking', 'نوبت‌ها', 'IconCalendarEvent'),
       mod(5, 'ownedUsers', 'منتظر نوبتدهی', 'IconUsersGroup'),
