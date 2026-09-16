@@ -2,6 +2,8 @@
 // Field names mirror the real API snapshots exactly; volume kept minimal.
 
 // Rooms + roles seeds live with the other static clinic reference data.
+import { serves as referenceServes, doctors } from './reference'
+
 export { rooms, roles } from './reference'
 
 const branch = { id: 24, name: 'شعبه سعادت‌آباد' }
@@ -70,7 +72,7 @@ export const owners = testUsers.map((u, i) => ({
   introduced_count: i + 1,
 }))
 
-const bookingBase = (id, u, type, date, time) => ({
+const bookingBase = (id, u, type, date, time, treatmentPlan = null) => ({
   id,
   user: { id: u.id, first_name: u.first_name, name: u.name, mobile: u.mobile, gender: u.gender },
   advisor,
@@ -79,22 +81,40 @@ const bookingBase = (id, u, type, date, time) => ({
   type,
   date,
   time,
+  // Combined datetime — the bookings list column and the TP booking dropdown read bookingAt.
+  booking_at: `${date} ${time}:00`,
+  doctor: doctors[0],
   branch,
   serves: [],
-  treatment_plan: null,
+  treatment_plan: treatmentPlan,
   visit_type: type === 1 ? { id: 1, title: 'ویزیت حضوری' } : null,
   doc_number: null,
   description: null,
+  performed_at: null,
+  has_treatment_description: false,
   status: { id: 1, title: 'ثبت شده' },
+})
+
+// Slim treatment-plan reference embedded on booking rows (TpDescriptionButton,
+// goToTreatmentPlan and the booking edit sidebar only need id + public link).
+const tpRef = (id) => ({
+  id,
+  public_hash_key: `demo-tp-${id}`,
+  public_link: `/tp/demo-tp-${id}`,
 })
 
 export const bookings = [
   bookingBase(101, testUsers[0], 1, '2026-09-10', '10:00'),
   bookingBase(102, testUsers[1], 1, '2026-09-11', '12:00'),
   bookingBase(103, testUsers[2], 1, '2026-09-12', '16:00'),
-  bookingBase(201, testUsers[0], 2, '2026-09-15', '09:00'),
-  bookingBase(202, testUsers[1], 2, '2026-09-16', '11:00'),
-  bookingBase(203, testUsers[2], 2, '2026-09-17', '15:00'),
+  {
+    ...bookingBase(201, testUsers[0], 2, '2026-09-15', '09:00', tpRef(501)),
+    // Booking 201 already has one seeded performed serve (see performedServes).
+    performed_at: '2026-09-15 09:30:00',
+    has_treatment_description: true,
+  },
+  bookingBase(202, testUsers[1], 2, '2026-09-16', '11:00', tpRef(502)),
+  bookingBase(203, testUsers[2], 2, '2026-09-17', '15:00', tpRef(503)),
 ]
 
 const contact = (id, u, result, contactedAt, billsec, duration) => ({
@@ -187,16 +207,37 @@ export const tasks = [
   ),
 ]
 
-export const treatmentPlans = [
-  {
-    id: 501,
+// Questions copied from the reference serves (pricing catalog) with a proposed
+// pivot per item — the shape the TP upsert tabs and the شرح درمان quick-add
+// chips consume (items[].questions[] with pivot flags).
+const tpQuestionsFromReference = (serveId) => {
+  const serve = referenceServes.find((s) => s.id === serveId)
+  return (serve?.questions ?? []).map((qq) => ({
+    id: qq.id,
+    title: qq.title,
+    type: qq.type,
+    coefficient: qq.coefficient,
+    items: qq.items.map((it) => ({
+      id: it.id,
+      title: it.title,
+      price: it.price,
+      pivot: { unit: 1, is_draft: false, is_proposed: true, is_performed: false },
+    })),
+  }))
+}
+
+const treatmentPlan = (id, u, serveId, price, teeth, extra = {}) => {
+  const serve = referenceServes.find((s) => s.id === serveId)
+  return {
+    id,
     user: {
-      id: testUsers[0].id,
-      first_name: testUsers[0].first_name,
-      name: testUsers[0].name,
-      mobile: testUsers[0].mobile,
+      id: u.id,
+      first_name: u.first_name,
+      name: u.name,
+      mobile: u.mobile,
     },
     advisor,
+    created_by: { id: 821_964, name: 'نیلوفر احمدی' },
     status: 2,
     status_title: 'در حال انجام',
     is_active: true,
@@ -204,49 +245,65 @@ export const treatmentPlans = [
     is_performed: false,
     is_proposed: false,
     can_edit_active: true,
-    total_price: 30_000_000,
-    total_cost: 30_000_000,
-    final_price: 30_000_000,
-    prepay: 5_000_000,
+    total_price: price,
+    total_cost: price,
+    final_price: price,
+    prepay: Math.round(price / 6),
     description: null,
+    public_hash_key: `demo-tp-${id}`,
     // serves[].teeth is the showable-teeth format used by calculateTeeth
-    serves: [
-      {
-        id: 246,
-        serve_id: 246,
-        title: 'ایمپلنت',
-        teeth: [
-          { position: 'TL', toothNumber: 3 },
-          { position: 'TL', toothNumber: 4 },
-        ],
-      },
-    ],
+    serves: [{ id: serveId, serve_id: serveId, title: serve?.title, teeth }],
     items: [
       {
-        id: 5011,
-        serve_id: 246,
-        title: 'ایمپلنت',
-        serve_title: 'ایمپلنت',
-        price: 30_000_000,
-        questions: [
-          {
-            id: 2461,
-            title: 'برند ایمپلنت',
-            type: 1,
-            items: [
-              {
-                id: 24_611,
-                title: 'کره‌ای',
-                price: 15_000_000,
-                pivot: { unit: 2, is_draft: false, is_proposed: true, is_performed: false },
-              },
-            ],
-          },
-        ],
+        id: id * 10 + 1,
+        serve_id: serveId,
+        title: serve?.title,
+        serve_title: serve?.title,
+        price,
+        questions: tpQuestionsFromReference(serveId),
       },
     ],
     created_at: '2026-09-05 10:00:00',
     branch,
+    ...extra,
+  }
+}
+
+export const treatmentPlans = [
+  treatmentPlan(501, testUsers[0], 246, 30_000_000, [
+    { position: 'TL', toothNumber: 3 },
+    { position: 'TL', toothNumber: 4 },
+  ]),
+  treatmentPlan(502, testUsers[1], 253, 80_000_000, [
+    { position: 'TR', toothNumber: 3 },
+    { position: 'TR', toothNumber: 4 },
+  ]),
+  treatmentPlan(503, testUsers[2], 257, 6_000_000, [{ position: 'BR', toothNumber: 5 }]),
+]
+
+// Performed serves (شرح درمان rows) — grouped by booking on the description
+// page. teeth uses ONE scalar display-number per entry (the card's tooth chips
+// render tooth.number scalars; array payloads are normalized in the handler).
+export const performedServes = [
+  {
+    id: 2001,
+    treatment_plan_id: 501,
+    booking_id: 201,
+    serve_industry_id: 246,
+    serve_industry_title: 'ایمپلنت',
+    question_id: 2461,
+    question_title: 'برند ایمپلنت',
+    item_id: 24_611,
+    item_title: 'کره‌ای',
+    unit: 1,
+    price: 15_000_000,
+    price_with_profit: 15_000_000,
+    teeth: [
+      { position: 'TL', number: 5 },
+      { position: 'TL', number: 4 },
+    ],
+    description: 'ایمپلنت کره‌ای برای دو دندان فک بالا چپ در جلسه اول انجام شد.',
+    performed_at: '2026-09-15 09:30:00',
   },
 ]
 

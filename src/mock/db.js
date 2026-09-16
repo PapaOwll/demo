@@ -3,7 +3,7 @@ import * as data from './seeds/data'
 import { serves as servesSeed, branchList, doctors, workingHours } from './seeds/reference'
 
 const STORAGE_KEY = 'crm-mock-db'
-const VERSION = 10
+const VERSION = 11
 
 let cache = null
 
@@ -24,6 +24,7 @@ const buildInitialDb = () =>
     contacts: data.contacts,
     tasks: data.tasks,
     treatmentPlans: data.treatmentPlans,
+    performedServes: data.performedServes,
     drafts: [],
     campaigns: data.campaigns,
     coupons: data.coupons,

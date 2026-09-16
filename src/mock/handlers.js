@@ -103,6 +103,13 @@ const applyFilters = (items, params) => {
   const userId = get('user_id')
   if (userId) out = out.filter((i) => String(i.user?.id ?? i.user_id) === String(userId))
 
+  // Bookings linked to a treatment plan (TP description page booking dropdown).
+  const tpFilter = get('treatment_plan')
+  if (tpFilter)
+    out = out.filter(
+      (i) => String(i.treatment_plan?.id ?? i.treatmentPlan?.id ?? '') === String(tpFilter)
+    )
+
   const assignTo = get('assign_to')
   if (assignTo)
     out = out.filter(
@@ -1161,24 +1168,158 @@ on('put', String.raw`v2/treatment-plan/(\d+)`, ({ match, body }) => {
   persist()
   return ok({ data: plan ?? {} })
 })
-on('get', String.raw`v2/treatment-plan/(\d+)/performed-serves`, ({ params }) =>
-  ok(listEnvelope([], params))
-)
-on('post', String.raw`v2/treatment-plan/(\d+)/perform`, ({ match, body }) => {
-  const plan = findById('treatmentPlans', match[1])
-  if (plan) {
-    plan.is_performed = true
-    if (body?.performed_at) plan.performed_at = body.performed_at
-    persist()
+// ---- شرح درمان (performed serves) persistence --------------------------------
+// The perform payload arrives as
+//   { serve_industry_id, teeth, booking_id, serve_industry_items: [{id, unit, price}], description }
+// (PER_TEETH auto-mapped items ride on teeth[].serve_industry_item_id instead).
+// Rows are stored flat in `performedServes` and grouped by booking on read.
+
+// One tooth entry per scalar display number — the description card renders
+// tooth.number scalars (array payloads from the client are expanded here).
+const normalizeTeeth = (teeth) =>
+  (Array.isArray(teeth) ? teeth : []).flatMap((t) => {
+    const position = t?.position
+    const numbers = t?.number ?? t?.toothNumber ?? t?.tooth_number
+    if (!position || numbers == null) return []
+    return (Array.isArray(numbers) ? numbers : [numbers]).map((n) => ({ position, number: n }))
+  })
+
+const resolveServeItemMeta = (serveId, itemId) => {
+  const serve = coll('serves').find((s) => String(s.id) === String(serveId))
+  if (!serve) return {}
+  const question = (serve.questions ?? []).find((qq) =>
+    (qq.items ?? []).some((c) => String(c.id) === String(itemId))
+  )
+  if (!question) return { serve_industry_title: serve.title }
+  return {
+    serve_industry_title: serve.title,
+    question_id: question.id,
+    question_title: question.title,
+    item_title: (question.items ?? []).find((c) => String(c.id) === String(itemId))?.title,
   }
-  return ok({ data: plan ?? {}, message: 'اجرا با موفقیت ثبت شد' })
+}
+
+const performedRowFromItem = (tpId, body, entry) => {
+  const unit = Math.max(1, Number(entry.unit) || 1)
+  const price = unit * (Number(entry.price) || 0)
+  return {
+    id: nextId('performedServes'),
+    treatment_plan_id: Number(tpId),
+    booking_id: body?.booking_id ?? null,
+    serve_industry_id: body?.serve_industry_id,
+    ...resolveServeItemMeta(body?.serve_industry_id, entry.id),
+    item_id: entry.id,
+    unit,
+    price,
+    price_with_profit: price,
+    teeth: normalizeTeeth(body?.teeth),
+    description: body?.description || '',
+    performed_at: nowStr(),
+  }
+}
+
+const syncPerformedFlags = (tpId, bookingId) => {
+  const remaining = coll('performedServes').filter(
+    (r) => String(r.treatment_plan_id) === String(tpId)
+  )
+  const plan = findById('treatmentPlans', tpId)
+  if (plan) plan.is_performed = remaining.length > 0
+  const booking = bookingId == null ? null : findById('bookings', bookingId)
+  if (booking) {
+    const hasRows = remaining.some((r) => String(r.booking_id) === String(bookingId))
+    booking.has_treatment_description = hasRows
+    booking.performed_at = hasRows ? (booking.performed_at ?? nowStr()) : null
+  }
+  persist()
+}
+
+on('get', String.raw`v2/treatment-plan/(\d+)/performed-serves`, ({ match, params }) => {
+  let rows = coll('performedServes').filter((r) => String(r.treatment_plan_id) === String(match[1]))
+  if (params.booking_id != null && params.booking_id !== '')
+    rows = rows.filter((r) => String(r.booking_id) === String(params.booking_id))
+  // Plain array (not the items envelope) — the query unwraps response.data.data/data.
+  const groups = []
+  rows.forEach((row) => {
+    let group = groups.find((g) => String(g.booking_id) === String(row.booking_id))
+    if (!group) {
+      const booking = row.booking_id == null ? null : findById('bookings', row.booking_id)
+      group = {
+        booking_id: row.booking_id,
+        booking_at: booking?.booking_at ?? row.performed_at,
+        doctor_name: booking?.doctor?.name ?? '',
+        perform_files: [],
+        items: [],
+      }
+      groups.push(group)
+    }
+    group.items.push({
+      id: row.id,
+      booking_id: row.booking_id,
+      performed_at: row.performed_at,
+      serve_industry_id: row.serve_industry_id,
+      serve_industry_title: row.serve_industry_title,
+      question_id: row.question_id,
+      question_title: row.question_title,
+      item_id: row.item_id,
+      item_title: row.item_title,
+      unit: row.unit,
+      price: row.price,
+      price_with_profit: row.price_with_profit,
+      teeth: row.teeth,
+      description: row.description,
+      files: [],
+    })
+  })
+  return ok({ data: groups })
 })
-on('put', String.raw`v2/treatment-plan/(\d+)/perform/items/\d+`, () =>
-  ok({ data: { success: true } })
-)
-on('delete', String.raw`v2/treatment-plan/(\d+)/perform/items/\d+`, () =>
-  ok({ data: { success: true } })
-)
+on('post', String.raw`v2/treatment-plan/(\d+)/perform`, ({ match, body }) => {
+  const items = body?.serve_industry_items?.length
+    ? body.serve_industry_items
+    : (Array.isArray(body?.teeth) ? body.teeth : [])
+        .filter((t) => t?.serve_industry_item_id ?? t?.serveIndustryItemId)
+        .map((t) => ({
+          id: t.serve_industry_item_id ?? t.serveIndustryItemId,
+          unit: t.unit ?? 1,
+          price: t.price ?? 0,
+        }))
+  const created = []
+  items.forEach((entry) => {
+    if (entry?.id == null) return
+    const row = performedRowFromItem(match[1], body, entry)
+    coll('performedServes').unshift(row)
+    created.push(row)
+  })
+  syncPerformedFlags(match[1], body?.booking_id)
+  return ok({ data: created, message: 'شرح درمان با موفقیت ثبت شد' })
+})
+on('put', String.raw`v2/treatment-plan/(\d+)/perform/items/(\d+)`, ({ match, body }) => {
+  const row = findById('performedServes', match[2])
+  if (row && String(row.treatment_plan_id) === String(match[1])) {
+    const itemId = body?.serve_industry_item_id ?? body?.serveIndustryItemId ?? row.item_id
+    const unit = Math.max(1, Number(body?.unit) || row.unit)
+    const unitPrice = Number(body?.price)
+    const price = Number.isFinite(unitPrice) && unitPrice >= 0 ? unit * unitPrice : row.price
+    Object.assign(row, resolveServeItemMeta(row.serve_industry_id, itemId), {
+      item_id: itemId,
+      unit,
+      price,
+      price_with_profit: price,
+      teeth: body?.teeth ? normalizeTeeth(body.teeth) : row.teeth,
+      description: body?.description ?? row.description,
+      booking_id: body?.booking_id ?? row.booking_id,
+    })
+    syncPerformedFlags(match[1], row.booking_id)
+  }
+  return ok({ data: row ?? {}, message: 'شرح درمان با موفقیت ویرایش شد' })
+})
+on('delete', String.raw`v2/treatment-plan/(\d+)/perform/items/(\d+)`, ({ match }) => {
+  const row = findById('performedServes', match[2])
+  if (row && String(row.treatment_plan_id) === String(match[1])) {
+    removeById('performedServes', match[2])
+    syncPerformedFlags(match[1], row.booking_id)
+  }
+  return ok({ data: { success: true }, message: 'شرح درمان با موفقیت حذف شد' })
+})
 on('post', String.raw`v2/treatment-plan/(\d+)/credit`, () => ok({ data: { success: true } }))
 on('get', String.raw`v2/treatment-plan/(\d+)/credit-total`, () => ok({ data: { total: 0 } }))
 on('get', 'v2/treatment-plan/[^/]+/[^/]+/print', () => ok({ data: {} }))

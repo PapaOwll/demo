@@ -1,4 +1,6 @@
 import { daysAgo, mockDelay } from '@/mocks/mock-storage'
+import { coll, findById } from '@/mock/db'
+import { camelize } from '@/utils/convert-to-camel-snake'
 
 /**
  * Mocks for the طرح درمان tab:
@@ -224,19 +226,37 @@ export const mockGetTreatmentPlans = async (params) => {
 export const mockGetTreatmentPlanDetail = async (idOrKey) => {
   await mockDelay(500)
   const plan = PLANS.find((p) => String(p.id) === String(idOrKey) || p.publicHashKey === idOrKey)
-  if (!plan) throw new Error('طرح درمان یافت نشد')
-  const { detail, ...rest } = plan
-  return { data: rest }
+  if (plan) {
+    const { detail, ...rest } = plan
+    return { data: rest }
+  }
+  // Fall back to the db-seeded plans (Bookings → شرح درمان flow) so the
+  // persisted, editable plans (501/502/…) resolve by id or public hash key.
+  const dbPlan =
+    findById('treatmentPlans', idOrKey) ??
+    coll('treatmentPlans').find((p) => p.public_hash_key === idOrKey)
+  if (dbPlan) return { data: camelize(dbPlan) }
+  throw new Error('طرح درمان یافت نشد')
 }
 
 /** serve items (tab list for the public preview), matched by hash key — with embedded questions */
 export const mockGetServeItemsByKey = async (key) => {
   await mockDelay(400)
   const plan = PLANS.find((p) => p.publicHashKey === key)
-  if (!plan) return []
-  return plan.serves.map((serve) => ({
+  if (plan) {
+    return plan.serves.map((serve) => ({
+      ...serve,
+      questions: plan.items.find((item) => item.serveId === serve.serveId)?.questions ?? [],
+    }))
+  }
+  // Fall back to the db-seeded plans (Bookings → شرح درمان flow) so the
+  // persisted plans' public previews (/tp/demo-tp-501 …) render too.
+  const dbPlan = coll('treatmentPlans').find((p) => p.public_hash_key === key)
+  if (!dbPlan) return []
+  const camelPlan = camelize(dbPlan)
+  return (camelPlan.serves ?? []).map((serve) => ({
     ...serve,
-    questions: plan.items.find((item) => item.serveId === serve.serveId)?.questions ?? [],
+    questions: camelPlan.items.find((item) => item.serveId === serve.serveId)?.questions ?? [],
   }))
 }
 
