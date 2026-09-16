@@ -215,10 +215,12 @@ const statusList = computed(() => statuses.value || [])
 const isLoadingAll = computed(() => isLoading.value || isLoadingCheques.value)
 
 // Combine financial-docs and cheques — the files endpoint wraps rows in an
-// {items} envelope, so unwrap before spreading.
+// {items} envelope, so unwrap (tolerating either shape) before spreading.
+const toFileRows = (value) =>
+  Array.isArray(value?.items) ? value.items : Array.isArray(value) ? value : []
 const allDocuments = computed(() => {
-  const docs = userDocuments.value?.items ?? userDocuments.value ?? []
-  const cheques = userCheques.value?.items ?? userCheques.value ?? []
+  const docs = toFileRows(userDocuments.value)
+  const cheques = toFileRows(userCheques.value)
   const all = [...docs, ...cheques]
   return all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 })
