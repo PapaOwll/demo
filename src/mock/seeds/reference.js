@@ -82,11 +82,11 @@ export const currentUser = {
         },
       ]),
       mod(3, 'visit', 'ویزیت‌ها', 'IconStethoscope'),
-      mod(4, 'booking', 'نوبت‌ها', 'IconCalendarEvent'),
+      mod(4, 'booking', 'انجام کار', 'IconCalendarEvent'),
       mod(5, 'ownedUsers', 'منتظر نوبتدهی', 'IconUsersGroup'),
       mod(6, 'calendar', 'تقویم', 'IconCalendar'),
       mod(7, 'contact', 'تماس‌ها', 'IconPhone'),
-      mod(8, 'task', 'کارها', 'IconListCheck'),
+      mod(8, 'task', 'وظایف', 'IconListCheck'),
       mod(9, 'attendance', 'حضور و غیاب', 'IconClock'),
       mod(10, 'treatment-plan', 'طرح درمان', 'IconClipboardList', [
         sub('create', 'ثبت طرح درمان'),
@@ -109,7 +109,7 @@ export const currentUser = {
       ]),
       mod(11, 'ads', 'تبلیغات', 'IconAd', [
         sub('campaign', 'کمپین‌ها'),
-        sub('imports', 'ایمپورت‌ها'),
+        sub('imports', 'لیست ورودی‌ها'),
         sub('coupon', 'کوپن‌ها'),
         sub('introductionMethod', 'روش‌های آشنایی'),
         sub('feedback', 'بازخوردها'),
