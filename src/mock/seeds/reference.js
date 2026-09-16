@@ -87,7 +87,7 @@ export const currentUser = {
       mod(6, 'calendar', 'تقویم', 'IconCalendar'),
       mod(7, 'contact', 'تماس‌ها', 'IconPhone'),
       mod(8, 'task', 'وظایف', 'IconListCheck'),
-      mod(9, 'attendance', 'حضور و غیاب', 'IconClock'),
+      mod(9, 'attendance', 'تردد', 'IconClock'),
       mod(10, 'treatment-plan', 'طرح درمان', 'IconClipboardList', [
         sub('create', 'ثبت طرح درمان'),
         sub('treatment-plan-list', 'لیست طرح‌های درمان'),
