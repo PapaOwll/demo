@@ -196,9 +196,9 @@ const canViewCost = computed(() => getPerms('treatment-plan', 'manage', false))
   }
 }
 
-// Mobile: the drawer becomes a near-full-width floating top sheet. The ~12px
-// inset keeps the page visible behind it and separates it from the
-// TpAddDescriptionDialog bottom sheet that opens alongside it. The
+// Mobile fallback only: the panel never opens on mobile (guarded in
+// UserTpCard.openTpPanel) — these styles just keep the sheet sane if it is
+// already open when the viewport shrinks below the lg breakpoint. The
 // .q-dialog__inner prefix out-ranks Quasar's forced full-width rule on xs.
 @include media-breakpoint-down(md) {
   .q-dialog__inner .tpp-drawer {

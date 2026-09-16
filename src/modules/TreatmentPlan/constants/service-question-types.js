@@ -35,6 +35,53 @@ export const filterQuestionsByChartType = (questions, chartType) => {
   return questions
 }
 
+export const BASE_COUNT_REQUIRED_MESSAGE = 'انتخاب پایه برای خدمت انتخابی الزامیست'
+
+/**
+ * @param {Array} questions
+ * @param {Object} items - Answers keyed by question ID ({ id, price, unit })
+ * @returns {boolean}
+ */
+export const hasUnsetBaseCount = (questions, items) => {
+  if (!questions || questions.length === 0 || !items) return false
+
+  return questions.some((question) => {
+    if (question.type !== QUESTION_TYPE.MULTIPLE || !question.coefficient) return false
+
+    const answer = items[question.id]
+    return !!answer && !Array.isArray(answer) && !answer.unit
+  })
+}
+
+/**
+ * Collects base-count answers ({ id, price, unit }) keyed by question ID from
+ * stored questions, reading the manually selected unit from the selected
+ * item's pivot — for use with hasUnsetBaseCount. Deliberately mirrors
+ * buildSingleSelectItem (question.items[0]?.pivot?.unit) so the guard checks
+ * exactly what the payload sends.
+ *
+ * @param {Array} questions - Stored questions whose items are the selected ones
+ * @returns {Object}
+ */
+export const getBaseCountAnswers = (questions) => {
+  const answers = {}
+
+  questions?.forEach((question) => {
+    if (question.type !== QUESTION_TYPE.MULTIPLE || !question.coefficient) return
+
+    const selectedItem = question.items?.[0]
+    if (selectedItem) {
+      answers[question.id] = {
+        id: selectedItem.id,
+        price: selectedItem.price,
+        unit: selectedItem.pivot?.unit ?? null,
+      }
+    }
+  })
+
+  return answers
+}
+
 /**
  * @param {Array} questions
  * @param {Array} selectedTeeth
@@ -97,10 +144,6 @@ export const getServiceQuestions = (service) => {
 
  * @param {Object} service 
  * @returns {string} (CHART_TYPES.DENTAL یا CHART_TYPES.JAW_BONE)
- * const service = { questions: [{ type: QUESTION_TYPE.PER_UNIT }] }
- * getRecommendedChartType(service) // returns 'jaw-bone'
- * const service2 = { questions: [{ type: QUESTION_TYPE.MULTIPLE }] }
- * getRecommendedChartType(service2) // returns 'dental'
  */
 export const getRecommendedChartType = (service) => {
   const questions = getServiceQuestions(service)

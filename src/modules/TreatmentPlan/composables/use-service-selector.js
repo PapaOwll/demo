@@ -4,6 +4,7 @@ import {
   filterQuestionsByChartType,
   getServiceQuestions,
   groupQuestionsByTooth,
+  hasUnsetBaseCount,
 } from '../constants/service-question-types'
 import { CHART_TYPES, DEFAULT_CHART_TYPE } from '../constants/chart-types'
 
@@ -168,6 +169,10 @@ export const useServiceSelector = (service, initialData = null) => {
     const hasType4Questions = serviceQuestions.value.some((q) => Number(q.type) === 4)
     if (hasType4Questions && ignoreNotType4.value) {
       return selectedTeeth.value.length > 0
+    }
+
+    if (hasUnsetBaseCount(filteredQuestions.value, itemAnswers.value)) {
+      return false
     }
 
     const needsTeeth =

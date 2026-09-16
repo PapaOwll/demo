@@ -27,6 +27,7 @@
         variant="outline"
         label="تعداد پایه"
         placeholder="انتخاب تعداد پایه"
+        :error="baseCountError"
         :disable="disabled"
         @update:model-value="handleSetBaseUnit"
       >
@@ -53,6 +54,7 @@
 import { computed, watch } from 'vue'
 import SelectField from '@/base/SelectField'
 import {
+  BASE_COUNT_REQUIRED_MESSAGE,
   getQuestionDisplayType,
   QUESTION_DISPLAY_TYPES,
 } from '@/modules/TreatmentPlan/constants/service-question-types'
@@ -119,7 +121,13 @@ const baseRange = computed(() => {
 
 const baseUnitValue = computed(() => {
   if (!props.answer || typeof props.answer !== 'object') return null
-  return props.answer.unit || baseRange.value?.[0] || null
+  return props.answer.unit || null
+})
+
+const baseCountError = computed(() => {
+  if (!needsBaseCount.value || props.disabled || baseUnitValue.value) return null
+  if (baseRange.value.length === 0) return null
+  return BASE_COUNT_REQUIRED_MESSAGE
 })
 
 const handleSetAnswer = (value) => {
@@ -165,10 +173,10 @@ watch([baseRange, () => props.answer], ([newRange, answer]) => {
   if (!needsBaseCount.value) return
   if (!newRange?.length) return
   if (!answer) return
-  if (!answer.unit) {
-    handleSetBaseUnit(newRange[0])
-  } else if (!newRange.includes(answer.unit)) {
-    handleSetBaseUnit(newRange[0])
+  if (answer.unit && !newRange.includes(answer.unit)) {
+    // Never auto-pick a replacement base count — clear the now-invalid value
+    // so the required-field error forces a manual re-selection.
+    handleSetBaseUnit(null)
   }
 })
 </script>

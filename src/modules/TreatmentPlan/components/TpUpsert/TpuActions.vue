@@ -132,6 +132,11 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Notif } from '@/data/services/notification-service'
 import { buildServeIndustries, buildServeIndustryItems } from '../../utils/question-items-builder'
+import {
+  BASE_COUNT_REQUIRED_MESSAGE,
+  getBaseCountAnswers,
+  hasUnsetBaseCount,
+} from '../../constants/service-question-types'
 import { numberSeparator } from '@/utils/formatter'
 import { useQueryClient } from '@tanstack/vue-query'
 import useDisclosure from '@/composables/use-disclosure'
@@ -348,6 +353,17 @@ const handleError = (e) => {
 
 const onSubmit = (isNew = true) => {
   if (!validateServices()) return
+
+  // Base counts must be picked manually at every stage — block the save while
+  // any MULTIPLE + coefficient answer has no unit, otherwise the backend would
+  // default it on its own.
+  const questions = props.itemList.flatMap((item) => item.questions || [])
+  if (hasUnsetBaseCount(questions, getBaseCountAnswers(questions))) {
+    Notif.error(BASE_COUNT_REQUIRED_MESSAGE, {
+      caption: 'لطفاً تعداد پایه را انتخاب کنید',
+    })
+    return
+  }
 
   const data = buildTreatmentPlanData(!isNew)
 

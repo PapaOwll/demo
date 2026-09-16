@@ -85,7 +85,7 @@
     <span>اطلاعاتی وجود ندارد</span>
   </div>
 
-  <UserOpgRequestDialog :visible="showOpgModal" :user-data="userInfo" @close="closeDialog" />
+  <UserPrescription :visible="showOpgModal" :user-data="userInfo" @close="closeDialog" />
 </template>
 
 <script setup>
@@ -95,7 +95,7 @@ import { convertToJalali, formatDate } from '@/utils/date-utils'
 import { IconPhoto } from '@tabler/icons-vue'
 import ActivityCard from '../../UserActivity/components/ActivityCard'
 import useDisclosure from '@/composables/use-disclosure'
-import UserOpgRequestDialog from '@/modules/User/components/UserDetails/UserOpgRequestDialog'
+import UserPrescription from '@/modules/User/components/UserDetails/UserPrescription'
 import { ENABLE_USER_DETAIL_MOCKS } from '@/mocks/config'
 import { mockGetOpgRequests } from '@/mocks/user-details/medical'
 

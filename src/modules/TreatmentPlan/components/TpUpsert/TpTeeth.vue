@@ -122,22 +122,22 @@
 </template>
 
 <script setup>
-// TODO: get svg with 32 teeth
 import { useRoute } from 'vue-router'
 import { computed, ref, watch } from 'vue'
 import { teethSVG } from '../../constants/teeth-svg'
-import { useGetTreatmentPlanByIdQuery } from '../../query'
 import { groupBottomTeeth, groupTopTeeth, teethGroupItem } from '../../constants/teeth'
-import { useTpProvider } from '../../composables/use-tp-provider'
-import TpTeethHelpBox from './TpTeethHelpBox'
-import { convertShowableToothToTooth, deduplicateTeeth } from '../../utils/teeth'
-import TpuComparisonBtn from './TpuComparisonBtn'
-import { useTpStatus } from '../../composables/use-tp-status'
 import { TREATMENT_PLAN_STEP, QUESTION_TYPE } from '../../constants/enums'
+import { useGetTreatmentPlanByIdQuery } from '../../query'
+import { useTpProvider } from '../../composables/use-tp-provider'
+import { convertShowableToothToTooth, deduplicateTeeth } from '../../utils/teeth'
+import { useTpStatus } from '../../composables/use-tp-status'
+import { useTpPermissions } from '../../composables/use-tp-permissions'
+import TpTeethHelpBox from './TpTeethHelpBox'
+import TpuComparisonBtn from './TpuComparisonBtn'
 
 const route = useRoute()
 const treatmentPlanId = route.params?.id
-
+const { canEditTreatmentPlan } = useTpPermissions()
 const { updateTeeth, treatmentData, selectedServe } = useTpProvider([
   'updateTeeth',
   'treatmentData',
@@ -322,10 +322,7 @@ const bottomTeeth = computed({
 const onSelectTooth = (toothId) => {
   if (isDisabledMouth.value) return
   const apiTeeth = selectedServeTeeth.value?.serve?.teeth
-  if (apiTeeth) {
-    const toothData = apiTeeth.find((tooth) => convertShowableToothToTooth(tooth) === toothId)
-    if (toothData?.isPerformed) return
-  }
+  if (apiTeeth && !canEditTreatmentPlan) return
 
   const isRemoveAction = selectedServeTeeth.value?.teeth?.includes(toothId)
 

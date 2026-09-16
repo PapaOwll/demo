@@ -333,7 +333,7 @@ const onChangeItem = (itemId, question) => {
   let selectedQuestionItem = itemId ? question.items.find((i) => i.id === itemId) : null
 
   if (question.type === QUESTION_TYPE.MULTIPLE && question.coefficient && selectedQuestionItem) {
-    const unit = getBaseItemValue(question) ?? baseRange.value?.[0] ?? null
+    const unit = null
     selectedQuestionItem = {
       ...selectedQuestionItem,
       pivot: {
@@ -466,7 +466,9 @@ watch(baseRange, (newRange) => {
     }
 
     if (currentBaseValue !== null && !newRange.includes(currentBaseValue)) {
-      onChangeBaseItem(newRange[0], question)
+      // Never auto-pick a replacement base count — clear the now-invalid value
+      // so the user re-selects it manually.
+      clearBaseItemValue(question)
     }
   })
 })

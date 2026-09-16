@@ -3,7 +3,7 @@ import * as data from './seeds/data'
 import { serves as servesSeed, branchList, doctors, workingHours } from './seeds/reference'
 
 const STORAGE_KEY = 'crm-mock-db'
-const VERSION = 13
+const VERSION = 14
 
 let cache = null
 
@@ -119,6 +119,51 @@ const buildInitialDb = () =>
           message: '{{name}} عزیز، نوبت شما در {{bookedAt}} ثبت شد',
         },
       },
+      // UserPrescription dialog options (reasons with their drug lists + imaging kinds).
+      'general.medicalPrescriptions': {
+        drugs: [
+          {
+            id: 1,
+            title: 'داروهای بعد از جراحی',
+            isActive: true,
+            drugs: [
+              { id: 11, srvId: 4101, name: 'آموکسی‌سیلین ۵۰۰' },
+              { id: 12, srvId: 4102, name: 'ایبوپروفن ۴۰۰' },
+              { id: 13, srvId: 4103, name: 'کلیدنوکس ۳۰۰' },
+            ],
+          },
+          {
+            id: 2,
+            title: 'ضدعفونی دهان',
+            isActive: true,
+            drugs: [
+              { id: 21, srvId: 4201, name: 'دهان‌شویه کلرهگزیدین' },
+              { id: 22, srvId: 4202, name: 'محلول بتیادین' },
+            ],
+          },
+          {
+            id: 3,
+            title: 'تسکین درد',
+            isActive: true,
+            drugs: [
+              { id: 31, srvId: 4301, name: 'استامینوفن کدئین' },
+              { id: 32, srvId: 4302, name: 'ناپروکسن ۲۵۰' },
+            ],
+          },
+          {
+            id: 4,
+            title: 'مراقبت بعد از ایمپلنت',
+            isActive: false,
+            drugs: [{ id: 41, srvId: 4401, name: 'ژل آلوئه‌ورا' }],
+          },
+        ],
+        imaging: [
+          { id: 1, title: 'عکس OPG کامل فک', isActive: true, srvId: 246 },
+          { id: 2, title: 'عکس CBCT سه‌بعدی', isActive: true, srvId: 247 },
+          { id: 3, title: 'عکس پری‌اپیکال', isActive: true, srvId: 248 },
+          { id: 4, title: 'عکس سفید و سیاه قدیمی', isActive: false, srvId: 249 },
+        ],
+      },
     },
     // TagSettings / TagSelect pick from these (items envelope).
     tags: [
@@ -129,6 +174,8 @@ const buildInitialDb = () =>
     accounting: [],
     surveys: [],
     feedbacks: [],
+    // imaging + drug prescriptions (POST v1/user/{id}/prescription[+/drugs])
+    prescriptions: [],
     announcements: [],
     installments: [
       {

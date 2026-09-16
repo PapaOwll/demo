@@ -18,3 +18,11 @@ export const apiGetTaskAssignee = () => request.get('v1/task/assignee')
 export const apiGetTasksTotalCount = (filters) =>
   request.get('v1/task?return_count=1', { params: filters })
 export const apiGetTaskType = (params) => request.get('v1/task/types', { params })
+
+export const apiGetFollowUpsSurvey = (taskId) => request.get(`v1/survey/followups/${taskId}`)
+
+export const apiSubmitFollowUpAnswers = (taskId, payload) =>
+  request.post(`v1/survey/followups/${taskId}/answers`, payload, { hadSnakize: true })
+
+export const apiSetCallStatus = (taskId, payload) =>
+  request.post(`v1/survey/followups/${taskId}/call`, payload, { hadSnakize: true })

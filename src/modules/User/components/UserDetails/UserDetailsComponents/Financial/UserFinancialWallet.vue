@@ -125,6 +125,7 @@ const handlePaymentSubmit = async (paymentData) => {
 
 const handleRefundSubmit = async () => {
   await queryClient.invalidateQueries({ queryKey: ['refund-requests', props.userId] })
+  await queryClient.invalidateQueries({ queryKey: ['user', 'accounting'] })
 }
 </script>
 

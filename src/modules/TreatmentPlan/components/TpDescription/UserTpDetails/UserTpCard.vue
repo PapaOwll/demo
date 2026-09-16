@@ -257,6 +257,7 @@ import { getCreatorName } from '@/modules/TreatmentPlan/utils/creator'
 import { generatePriceFormat } from '@/utils/formatter'
 import { useGetFilesByType, useGetMedicalInfoQuery } from '@/modules/User/query/index'
 import { FILE_TYPE_ENUM } from '@/modules/User/enums/fileTypeEnums'
+import { useIsMobile } from '@/composables/use-is-mobile'
 import UserRadiologyUploader from '@/modules/User/components/UserDetails/UserDetailsComponents/UserMedicalDocs/components/UserRadiologyUploader'
 
 const emits = defineEmits(['change:tab'])
@@ -286,6 +287,7 @@ const showDiseaseDialog = ref(false)
 const showFinancialDialog = ref(false)
 const showTpPanel = ref(false)
 const selectedTpId = ref(null)
+const isMobile = useIsMobile()
 const userId = computed(() => props.userData?.userId || props.userData?.user?.id)
 const tpQueryEnabled = computed(() => {
   const id = userId.value
@@ -367,7 +369,10 @@ const totalBalanceAmount = computed(() =>
     : generatePriceFormat(creditData.value.credit)
 )
 
+// The details drawer is desktop-only: on mobile the add-description sheet
+// takes the whole screen, so the panel must never open there.
 const openTpPanel = (tpId) => {
+  if (isMobile.value) return
   selectedTpId.value = tpId
   showTpPanel.value = true
 }

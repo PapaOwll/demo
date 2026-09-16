@@ -1,85 +1,27 @@
 <template>
   <div class="teeth-chart">
-    <!--    <div class="jaw-selector">-->
-    <!--      <QBtnToggle-->
-    <!--        v-model="upperTeeth"-->
-    <!--        no-caps-->
-    <!--        rounded-->
-    <!--        unelevated-->
-    <!--        bordered-->
-    <!--        toggle-color="primary"-->
-    <!--        color="white"-->
-    <!--        text-color="primary"-->
-    <!--        :options="upperJawOptions"-->
-    <!--        :disable="disabled"-->
-    <!--        class="tpt__teeth-toggle"-->
-    <!--      />-->
-    <!--    </div>-->
+    <div class="half-jaws">
+      <section v-for="halfJaw in halfJaws" :key="halfJaw.key" class="half-jaw">
+        <Typography variant="body" size="3" weight="semibold" class="half-jaw__title">
+          {{ halfJaw.title }}
+        </Typography>
 
-    <div class="jaw">
-      <div class="teeth-guide">
-        <!--        <div class="teeth-guide__item">-->
-        <!--          <Typography variant="body" size="3" weight="semibold">بالا چپ</Typography>-->
-        <!--          <Typography variant="caption" size="4" color="grey">Upper Left</Typography>-->
-        <!--        </div>-->
-        <!--        <div class="teeth-guide__item">-->
-        <!--          <Typography variant="body" size="3" weight="semibold">بالا راست</Typography>-->
-        <!--          <Typography variant="caption" size="4" color="grey">Upper Right</Typography>-->
-        <!--        </div>-->
-      </div>
-      <div class="teeth-grid">
-        <div class="teeth-grid__extra" />
-        <ToothItem
-          v-for="tooth in upperJaw"
-          :key="tooth.id"
-          :tooth-id="tooth.id"
-          :tooth-number="tooth.number"
-          :is-implant="isImplant"
-          :model-value="isToothSelected(tooth.id)"
-          :disabled="isToothDisabled(tooth.id)"
-          @update:model-value="handleToothClick(tooth.id)"
-        />
-      </div>
-      <div class="teeth-grid">
-        <div class="teeth-grid__extra" />
-        <ToothItem
-          v-for="tooth in lowerJaw"
-          :key="tooth.id"
-          :tooth-id="tooth.id"
-          :tooth-number="tooth.number"
-          :is-implant="isImplant"
-          :model-value="isToothSelected(tooth.id)"
-          :disabled="isToothDisabled(tooth.id)"
-          @update:model-value="handleToothClick(tooth.id)"
-        />
-      </div>
-      <div class="teeth-guide">
-        <!--        <div class="teeth-guide__item">-->
-        <!--          <Typography variant="body" size="4" weight="semibold">پایین چپ</Typography>-->
-        <!--          <Typography variant="caption" size="4" color="grey">Lower Left</Typography>-->
-        <!--        </div>-->
-        <!--        <div class="teeth-guide__item">-->
-        <!--          <Typography variant="body" size="4" weight="semibold">پایین راست</Typography>-->
-        <!--          <Typography variant="caption" size="4" color="grey">Lower Right</Typography>-->
-        <!--        </div>-->
-      </div>
+        <div class="half-jaw__rows">
+          <div v-for="(row, index) in halfJaw.rows" :key="index" class="teeth-grid">
+            <ToothItem
+              v-for="tooth in row"
+              :key="tooth.id"
+              :tooth-id="tooth.id"
+              :tooth-number="tooth.number"
+              :is-implant="isImplant"
+              :model-value="isToothSelected(tooth.id)"
+              :disabled="isToothDisabled(tooth.id)"
+              @update:model-value="handleToothClick(tooth.id)"
+            />
+          </div>
+        </div>
+      </section>
     </div>
-
-    <!--    <div class="jaw-selector">-->
-    <!--      <QBtnToggle-->
-    <!--        v-model="lowerTeeth"-->
-    <!--        no-caps-->
-    <!--        rounded-->
-    <!--        unelevated-->
-    <!--        bordered-->
-    <!--        toggle-color="primary"-->
-    <!--        color="white"-->
-    <!--        text-color="primary"-->
-    <!--        :options="lowerJawOptions"-->
-    <!--        :disable="disabled"-->
-    <!--        class="tpt__teeth-toggle"-->
-    <!--      />-->
-    <!--    </div>-->
   </div>
 </template>
 
@@ -87,6 +29,7 @@
 import { computed } from 'vue'
 // import { QBtnToggle } from 'quasar'
 import ToothItem from './ToothItem'
+import Typography from '@/base/Typography'
 import {
   teethRows,
   // groupTopTeeth,
@@ -112,14 +55,32 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-tooth', 'quick-select'])
 
-const swapHalves = (row) => {
-  const entries = Object.entries(row).map(([id, number]) => ({ id: Number(id), number }))
-  const mid = entries.length / 2
-  return [...entries.slice(mid).reverse(), ...entries.slice(0, mid).reverse()]
-}
+const toTeeth = (row) => Object.entries(row).map(([id, number]) => ({ id: Number(id), number }))
 
-const upperJaw = computed(() => swapHalves(teethRows.upper))
-const lowerJaw = computed(() => swapHalves(teethRows.lower))
+// teethRows lists each jaw right-quadrant-first (ids 1-7 / 15-21) and already
+// numbers those quadrants 7 -> 1; the left quadrants (ids 8-14 / 22-28) number
+// 1 -> 7.
+const upperTeeth = toTeeth(teethRows.upper)
+const lowerTeeth = toTeeth(teethRows.lower)
+
+// Two half-jaw blocks, each holding the upper row above the lower row of the
+// same side, mirrored around the midline so the front teeth (number 1) of
+// both sides face each other: the right block reads 1 -> 7 left-to-right and
+// the left block 1 -> 7 right-to-left. The right block comes first in the
+// DOM: .half-jaws is row-reverse, so it sits on the right when the blocks fit
+// side by side and wraps to the top line when they do not.
+const halfJaws = [
+  {
+    key: 'right',
+    title: 'نیم فک راست',
+    rows: [upperTeeth.slice(0, 7).reverse(), lowerTeeth.slice(0, 7).reverse()],
+  },
+  {
+    key: 'left',
+    title: 'نیم فک چپ',
+    rows: [upperTeeth.slice(7).reverse(), lowerTeeth.slice(7).reverse()],
+  },
+]
 
 // const upperJawOptions = computed(() => [
 //   { label: '0', value: 0 },
@@ -224,98 +185,47 @@ const handleToothClick = (toothId) => {
   gap: $spacing-xl;
 }
 
-.jaw-selector {
+// LTR keeps the 7 -> 1 reading order and the row-reverse anchoring
+// deterministic under the app-wide RTL direction. row-reverse pins the first
+// DOM block (right half-jaw) to the right when both blocks fit on one line —
+// matching the quadrant sides of the previous full-arch chart — and wraps it
+// to the first (top) line once they no longer fit.
+.half-jaws {
+  direction: ltr;
   display: flex;
-  align-items: center;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
   justify-content: center;
-  padding: $spacing-md;
-  border-radius: $radius-md;
-  margin: 0 auto;
+  gap: $spacing-lg $spacing-xl;
 }
 
-.jaw {
-  direction: ltr;
-  border-radius: $radius-md;
-  padding: $spacing-lg;
+.half-jaw {
+  min-width: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-direction: column;
-  gap: $spacing-md;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border: 1px solid $grey-3;
+  border-radius: $radius-md;
 
   &__title {
-    margin-bottom: $spacing-lg;
+    // Only the layout container is LTR; the Persian title itself stays RTL.
+    direction: rtl;
     text-align: center;
   }
-}
 
-.teeth-grid {
-  display: grid;
-  grid-template-columns: repeat(15, 1fr);
-  grid-template-rows: 1fr;
-  grid-column-gap: $spacing-md;
-  gap: $spacing-sm;
-  justify-items: center;
-
-  &__extra {
-    grid-area: 1/ 8 / 2/ 9;
-  }
-}
-
-.selection-info {
-  text-align: center;
-  padding: $spacing-sm;
-  background-color: $grey-1;
-  border-radius: $radius-sm;
-}
-
-.tooth-item {
-  position: relative;
-  width: 48px;
-  height: 48px;
-  border: 2px solid $grey-4;
-  border-radius: $radius-sm;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background-color: white;
-
-  &:hover:not(.disabled) {
-    border-color: $light-blue-filled;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  &.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.tpt {
-  margin-top: 1rem;
-  text-align: center;
-  position: relative;
-
-  &__teeth-toggle {
-    border: 2px solid $grey-4;
-    border-radius: 5px;
-  }
-}
-
-.teeth-guide {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  &__item {
-    width: 50%;
+  &__rows {
     display: flex;
     flex-direction: column;
-    gap: $spacing-xs;
-    justify-content: center;
-    align-items: center;
+    gap: $spacing-sm;
   }
+}
+
+// 7 columns capped at the 48px tooth size: tracks share the available width
+// and shrink on narrow screens instead of overflowing the dialog.
+.teeth-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 48px));
+  gap: $spacing-sm;
 }
 </style>

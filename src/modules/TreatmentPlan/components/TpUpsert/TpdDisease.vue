@@ -59,6 +59,12 @@ import { useGetMedicalInfoQuery } from '@/modules/User/query'
 import { useTpStatus } from '../../composables/use-tp-status'
 import { useTpVoice } from '../../composables/use-tp-voice'
 import { TREATMENT_PLAN_MODE } from '@/modules/TreatmentPlan/constants/enums'
+import {
+  BASE_COUNT_REQUIRED_MESSAGE,
+  getBaseCountAnswers,
+  hasUnsetBaseCount,
+} from '../../constants/service-question-types'
+import { buildServeIndustryItems } from '../../utils/question-items-builder'
 import { useBranchTpPerform } from '../../composables/use-branch-tp-perform'
 
 const props = defineProps({
@@ -113,10 +119,22 @@ const submitPreTp = () => {
     return
   }
 
-  const serveIndustryItems =
-    treatmentData?.value?.items?.flatMap(({ questions }) =>
-      questions?.flatMap((q) => q.items?.map((i) => i.id))
-    ) || []
+  const draftQuestions =
+    treatmentData?.value?.items?.flatMap(({ questions }) => questions || []) || []
+
+  if (hasUnsetBaseCount(draftQuestions, getBaseCountAnswers(draftQuestions))) {
+    Notif.error(BASE_COUNT_REQUIRED_MESSAGE, {
+      caption: 'لطفاً تعداد پایه را انتخاب کنید',
+    })
+    return
+  }
+
+  // Keep the manually selected base counts (pivot.unit) in the payload — same
+  // serve_industry_items shape the main v2/treatment-plan save uses — so units
+  // are never defaulted automatically after the draft is submitted.
+  const serveIndustryItems = draftQuestions
+    .flatMap((question) => buildServeIndustryItems(question))
+    .filter(Boolean)
 
   const serveIndustries =
     treatmentData?.value?.teeth

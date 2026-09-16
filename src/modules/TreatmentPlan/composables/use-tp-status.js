@@ -7,10 +7,10 @@ export const isToothStatusMatchingStep = (toothData, stepNumber) => {
 
   switch (stepNumber) {
     case TREATMENT_PLAN_STEP.DRAFT: {
-      return toothData.isDraft && !toothData.isProposed && !toothData.isPerformed
+      return toothData.isDraft && !toothData.isProposed
     }
     case TREATMENT_PLAN_STEP.PROPOSED: {
-      return toothData.isProposed && !toothData.isPerformed
+      return toothData.isProposed
     }
     default: {
       return true

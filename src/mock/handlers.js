@@ -1,8 +1,15 @@
 // Mock route table — resolves axios requests to local mock responses.
 import { coll, db, persist, nextId, findById, removeById } from './db'
 import * as R from './seeds/reference'
+import { followUpSurveys } from './seeds/data'
 
 const nowStr = () => new Date().toISOString().slice(0, 19).replace('T', ' ')
+
+const daysFromNow = (days) => {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 19).replace('T', ' ')
+}
 
 // ---------- helpers ----------
 
@@ -814,7 +821,65 @@ on('delete', String.raw`v1/user/(\d+)/cheques/(\d+)`, ({ match }) => {
   removeById('cheques', match[2])
   return ok({ data: { success: true } })
 })
-on('get', String.raw`v1/user/(\d+)/prescription`, () => ok({ data: [] }))
+// ===== prescriptions (imaging + drugs) — persisted, surfaced on the OPG tab =====
+const prescriptionCard = (p) => ({
+  id: p.id,
+  registrationDate: p.registrationDate,
+  expireDate: p.expireDate,
+  trackingCode: p.trackingCode,
+  doctorName: p.doctorName,
+  services: p.services,
+})
+const randomCode = (prefix) => `${prefix}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+on('get', String.raw`v1/user/(\d+)/prescription`, ({ match }) =>
+  ok({
+    data: coll('prescriptions')
+      .filter((p) => String(p.user_id) === String(match[1]))
+      .map((p) => prescriptionCard(p)),
+  })
+)
+on('post', String.raw`v1/user/(\d+)/prescription`, ({ match, body }) => {
+  // hadSnakize API — srv_id arrives snake_cased
+  const srvId = body?.srv_id ?? body?.srvId
+  const imaging = (settingsStore()['general.medicalPrescriptions']?.imaging ?? []).find(
+    (item) => item.srvId === srvId
+  )
+  const item = {
+    id: nextId('prescriptions'),
+    user_id: Number(match[1]),
+    kind: 'imaging',
+    registrationDate: nowStr(),
+    expireDate: daysFromNow(14),
+    trackingCode: randomCode('OPG'),
+    doctorName: 'دکتر مریم احمدی',
+    services: JSON.stringify([{ detail_id: srvId, service_name: imaging?.title ?? 'تصویربرداری' }]),
+  }
+  coll('prescriptions').unshift(item)
+  persist()
+  return ok({ data: item, message: 'درخواست تصویربرداری با موفقیت ثبت شد' })
+})
+on('post', String.raw`v1/user/(\d+)/prescription/drugs`, ({ match, body }) => {
+  const settings = settingsStore()['general.medicalPrescriptions']
+  const allDrugs = (settings?.drugs ?? []).flatMap((reason) => reason.drugs ?? [])
+  const items = (body?.items ?? []).map((it, index) => {
+    const srvId = it?.srv_id ?? it?.srvId
+    const drug = allDrugs.find((d) => d.srvId === srvId)
+    return { detail_id: srvId, service_name: drug?.name ?? `دارو ${index + 1}` }
+  })
+  const item = {
+    id: nextId('prescriptions'),
+    user_id: Number(match[1]),
+    kind: 'drug',
+    registrationDate: nowStr(),
+    expireDate: null,
+    trackingCode: randomCode('RX'),
+    doctorName: 'دکتر مریم احمدی',
+    services: JSON.stringify(items),
+  }
+  coll('prescriptions').unshift(item)
+  persist()
+  return ok({ data: item, message: 'نسخه دارویی با موفقیت ثبت شد' })
+})
 on('get', String.raw`v1/user/(\d+)/payment-obligations`, ({ params }) =>
   ok(listEnvelope([], params))
 )
@@ -854,7 +919,6 @@ on('put', String.raw`v1/user/(\d+)`, ({ match, body }) => {
   persist()
   return ok({ data: user ?? {} })
 })
-on('post', String.raw`v1/user/(\d+)/prescription`, () => ok({ data: { success: true } }))
 on('put', String.raw`v1/file/\d+/verification`, () => ok({ data: { success: true } }))
 on('get', 'v1/user/export', (ctx) => ok(blobBody(ctx.config, 'id,name,mobile\n1,محمدی,9121111111')))
 
@@ -1046,6 +1110,45 @@ on('delete', String.raw`v1/booking/(\d+)`, ({ match }) => {
 
 // ===== tasks / contacts (generic CRUD) =====
 routes.push(...crudRoutes('v1/task', 'tasks'), ...crudRoutes('v1/contact', 'contacts'))
+
+// ===== survey follow-ups (FollowUpSurveyModal) =====
+// Questions come from the seeded followUpSurveys (matched by task type slug);
+// answers / call outcomes persist on the task row so the modal prefills them
+// after reload and TaskList reflects the completed state.
+const surveyForTask = (task) => followUpSurveys.find((s) => s.kindSlug === task?.type?.slug)
+const completeTask = (task) => {
+  Object.assign(task, { done_at: nowStr(), status: 1, status_title: 'انجام شده' })
+}
+on('get', String.raw`v1/survey/followups/(\d+)`, ({ match }) => {
+  const task = findById('tasks', match[1])
+  const survey = surveyForTask(task)
+  if (!survey) return ok({ data: { kindTitle: 'نظرسنجی بیمار', items: [] } })
+  return ok({
+    data: {
+      kindTitle: survey.kindTitle,
+      items: survey.items,
+      ...(task?.survey_answers ? { answers: task.survey_answers } : {}),
+    },
+  })
+})
+on('post', String.raw`v1/survey/followups/(\d+)/answers`, ({ match, body }) => {
+  const task = findById('tasks', match[1])
+  if (task) {
+    task.survey_answers = body?.answers ?? {}
+    completeTask(task)
+    persist()
+  }
+  return ok({ data: { success: true }, message: 'نظرسنجی با موفقیت ثبت شد' })
+})
+on('post', String.raw`v1/survey/followups/(\d+)/call`, ({ match, body }) => {
+  const task = findById('tasks', match[1])
+  if (task) {
+    task.call_answered = body?.answered ?? false
+    completeTask(task)
+    persist()
+  }
+  return ok({ data: { success: true }, message: 'وضعیت تماس با موفقیت ثبت شد' })
+})
 
 // ===== attendance (dedicated — rows carry a nested user object, full
 // datetimes, admin and room; the list drives the present/history tabs) =====

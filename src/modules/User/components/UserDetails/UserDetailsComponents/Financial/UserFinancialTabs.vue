@@ -24,6 +24,14 @@
             :left-icon="IconRefresh"
             @click="refreshListAccounting"
           />
+          <Button
+            v-if="state.tabSelected === 3"
+            class="m-x-4"
+            color="blue-grey"
+            variant="flat"
+            :left-icon="IconRefresh"
+            @click="refreshListRequests"
+          />
         </QTabs>
       </div>
       <Wallet
@@ -90,6 +98,10 @@ watch(
 
 const refreshListAccounting = () => {
   queryClient.resetQueries({ queryKey: ['user', 'accounting'] })
+}
+
+const refreshListRequests = () => {
+  queryClient.resetQueries({ queryKey: ['refund-requests'] })
 }
 </script>
 

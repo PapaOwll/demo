@@ -113,10 +113,11 @@
     @close-form="closeSendInfoForm"
   />
 
-  <UserOpgRequestDialog
+  <UserPrescription
     v-if="opgDialogVisible"
     :visible="opgDialogVisible"
     :user-data="userData"
+    initial-tab="imaging"
     @close="closeOpgDialog"
   />
 </template>
@@ -144,7 +145,7 @@ import { storeToRefs } from 'pinia'
 import { handleError } from '@/utils/error-handler'
 import UserRoleForm from '@/modules/User/components/UserRoleForm'
 import useDisclosure from '@/composables/use-disclosure'
-import UserOpgRequestDialog from '@/modules/User/components/UserDetails/UserOpgRequestDialog'
+import UserPrescription from '@/modules/User/components/UserDetails/UserPrescription'
 
 const emits = defineEmits(['updateTable', 'close'])
 const props = defineProps(['user'])

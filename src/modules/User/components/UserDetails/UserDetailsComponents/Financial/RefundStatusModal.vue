@@ -40,7 +40,7 @@
       :enum-type="'financial.refund'"
       :auto-upload="false"
       :max-file-size="1048576 * 10"
-      accept=".jpg, .jpeg, .png, image/*"
+      accept=".jpg, .jpeg, .png, image/*,.pdf"
       multiple
       class="rsm__uploader"
       @upload-success="handleUploadSuccess"

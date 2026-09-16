@@ -217,13 +217,12 @@ watch(
   display: flex;
   flex-direction: column;
   gap: $spacing-2xl;
-  height: max(100% + 20dvh) !important;
 }
 
 .chart-section {
   background-color: white;
   border-radius: $radius-md;
-  padding: $spacing-xl;
+  padding: $spacing-sm;
 }
 
 .type4-ignore-section {
@@ -259,7 +258,20 @@ watch(
   padding: $spacing-sm $spacing-lg;
   background-color: white !important;
   border-top: 1px solid $grey-4;
-  margin-top: auto;
   z-index: 100;
+}
+@include media-breakpoint-down(md) {
+  .actions {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    padding-bottom: calc(#{$spacing-sm} + env(safe-area-inset-bottom, 0px));
+  }
+
+  .service-selector:has(.actions) {
+    padding-bottom: calc(
+      #{$spacing-3xl} + (2 * #{$spacing-sm}) + 1px + env(safe-area-inset-bottom, 0px)
+    );
+  }
 }
 </style>

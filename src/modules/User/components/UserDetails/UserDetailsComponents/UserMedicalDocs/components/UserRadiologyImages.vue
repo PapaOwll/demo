@@ -70,7 +70,7 @@
     />
 
     <!-- OPG Request Dialog -->
-    <UserOpgRequestDialog :visible="showOpgModal" :user-data="userData" @close="closeOpgDialog" />
+    <UserPrescription :visible="showOpgModal" :user-data="userData" @close="closeOpgDialog" />
 
     <!-- Image Lightbox -->
     <ImageCarouselLightBox
@@ -138,7 +138,7 @@ import {
 } from '@/modules/User/query'
 import { convertToJalali, formatDate } from '@/utils/date-utils'
 import ImageCarouselLightBox from '@/components/ImageCarousel'
-import UserOpgRequestDialog from '@/modules/User/components/UserDetails/UserOpgRequestDialog'
+import UserPrescription from '@/modules/User/components/UserDetails/UserPrescription'
 import UserRadiologyUploader from '@/modules/User/components/UserDetails/UserDetailsComponents/UserMedicalDocs/components/UserRadiologyUploader'
 import useDisclosure from '@/composables/use-disclosure'
 import { Notif } from '@/data/services/notification-service'

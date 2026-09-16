@@ -228,6 +228,113 @@ export const tasks = [
     1,
     'یادآوری ارسال عکس'
   ),
+  // survey follow-up tasks — TaskList shows the پیگیری button for these slugs
+  // (surveyFollowUpEnums) and FollowUpSurveyModal reads the matching question set
+  task(
+    404,
+    testUsers[1],
+    {
+      id: 11,
+      title: 'پیگیری پس از نخستین ویزیت',
+      slug: 'first-visit-follow-up',
+      template_id: null,
+    },
+    '2026-09-18 10:00:00',
+    2,
+    null
+  ),
+  task(
+    405,
+    testUsers[2],
+    { id: 12, title: 'پیگیری پس از درمان', slug: 'post-treatment-follow-up', template_id: null },
+    '2026-09-17 09:30:00',
+    1,
+    null
+  ),
+]
+
+// Follow-up survey question sets served by GET v1/survey/followups/{taskId}.
+// Answer persistence lives on the task row itself (survey_answers / call_answered).
+export const followUpSurveys = [
+  {
+    kindSlug: 'first-visit-follow-up',
+    kindTitle: 'نظرسنجی پس از نخستین ویزیت',
+    items: [
+      {
+        id: 'fv1',
+        title: 'میزان رضایت شما از نخستین بازدید کلینیک چقدر بود؟',
+        type: 'number',
+        min: 1,
+        max: 5,
+        showAverage: true,
+      },
+      {
+        id: 'fv2',
+        title: 'برخورد و پاسخگویی کارشناسان پذیرش را چگونه ارزیابی می‌کنید؟',
+        type: 'choice',
+        options: [
+          { value: 'excellent', label: 'عالی' },
+          { value: 'good', label: 'خوب' },
+          { value: 'fair', label: 'متوسط' },
+          { value: 'poor', label: 'ضعیف' },
+        ],
+      },
+      {
+        id: 'fv3',
+        title: 'آیا نوبت شما در زمان مقرر آغاز شد؟',
+        type: 'choice',
+        options: [
+          { value: 'yes', label: 'بله' },
+          { value: 'almost', label: 'با تاخیر کم' },
+          { value: 'no', label: 'خیر' },
+        ],
+      },
+      {
+        id: 'fv4',
+        title: 'توضیحات یا پیشنهاد شما برای بهبود خدمات',
+        type: 'text',
+      },
+    ],
+  },
+  {
+    kindSlug: 'post-treatment-follow-up',
+    kindTitle: 'نظرسنجی پیگیری پس از درمان',
+    items: [
+      {
+        id: 'pt1',
+        title: 'میزان رضایت شما از نتیجه درمان چقدر بود؟',
+        type: 'number',
+        min: 1,
+        max: 5,
+        showAverage: true,
+      },
+      {
+        id: 'pt2',
+        title: 'آیا پس از پایان درمان درد یا حساسیت داشتید؟',
+        type: 'choice',
+        options: [
+          { value: 'no', label: 'خیر' },
+          { value: 'mild', label: 'کم' },
+          { value: 'severe', label: 'زیاد' },
+        ],
+      },
+      {
+        id: 'pt3',
+        title: 'آیا کلینیک را به دوستان و آشنایان پیشنهاد می‌کنید؟',
+        type: 'choice',
+        options: [
+          { value: 'definitely', label: 'حتما پیشنهاد می‌کنم' },
+          { value: 'probably', label: 'احتمالا پیشنهاد می‌کنم' },
+          { value: 'no', label: 'پیشنهاد نمی‌کنم' },
+        ],
+      },
+      {
+        id: 'pt4',
+        title: 'نظر نهایی شما درباره روند درمان',
+        type: 'text',
+      },
+    ],
+  },
 ]
 
 // Questions copied from the reference serves (pricing catalog) with a proposed

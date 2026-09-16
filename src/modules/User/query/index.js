@@ -50,6 +50,7 @@ import {
   apiGetUserTags,
   apiSendOpgRequest,
   apiGetOpgRequest,
+  apiSendDrugPrescription,
   apiGetUserChatsSummary,
   apiGetUserCallsSummary,
   apiGetUserConversations,
@@ -621,6 +622,13 @@ export const useApiSaveUserTags = (options = {}) =>
 export const useApiSendOpgRequest = (options = {}) =>
   useMutation({
     mutationFn: ({ id, ...data }) => apiSendOpgRequest(id, data),
+    onError: (error) => handleError(error),
+    ...options,
+  })
+
+export const useApiSendDrugPrescription = (options = {}) =>
+  useMutation({
+    mutationFn: ({ id, ...data }) => apiSendDrugPrescription(id, data),
     onError: (error) => handleError(error),
     ...options,
   })

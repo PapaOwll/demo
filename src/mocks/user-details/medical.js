@@ -1,4 +1,5 @@
 import { daysAgo, mockDelay } from '@/mocks/mock-storage'
+import { coll } from '@/mock/db'
 
 /**
  * Mocks for the پرونده پزشکی tab:
@@ -89,40 +90,52 @@ export const mockGetMedicalFiles = async () => {
   }
 }
 
+const BASE_OPG_REQUESTS = [
+  {
+    id: 9012,
+    registrationDate: daysAgo(20, 10, 0),
+    expireDate: daysAgo(-10, 23, 59),
+    trackingCode: 'OPG-8F3K2Q',
+    doctorName: 'دکتر مریم احمدی',
+    services: JSON.stringify([
+      { detail_id: 1, service_name: 'عکس OPG کامل فک' },
+      { detail_id: 2, service_name: 'بررسی سینوس' },
+    ]),
+  },
+  {
+    id: 8741,
+    registrationDate: daysAgo(75, 12, 30),
+    expireDate: daysAgo(45, 23, 59),
+    trackingCode: 'OPG-2M9X7D',
+    doctorName: 'دکتر علی رضایی',
+    services: JSON.stringify([{ detail_id: 3, service_name: 'عکس OPG کنترل پس از درمان' }]),
+  },
+  {
+    id: 8302,
+    registrationDate: daysAgo(140, 15, 15),
+    expireDate: daysAgo(110, 23, 59),
+    trackingCode: 'OPG-5T1N4B',
+    doctorName: 'دکتر مریم احمدی',
+    services: JSON.stringify([
+      { detail_id: 4, service_name: 'عکس OPG اولیه' },
+      { detail_id: 5, service_name: 'ارزیابی دندان عقل' },
+    ]),
+  },
+]
+
 export const mockGetOpgRequests = async () => {
   await mockDelay(450)
+  // merge prescriptions submitted through the UserPrescription dialog (imaging
+  // + drug kinds) so newly registered requests show up on the OPG timeline
+  const submitted = coll('prescriptions').map((p) => ({
+    id: p.id,
+    registrationDate: p.registrationDate,
+    expireDate: p.expireDate,
+    trackingCode: p.trackingCode,
+    doctorName: p.doctorName,
+    services: p.services,
+  }))
   return {
-    data: [
-      {
-        id: 9012,
-        registrationDate: daysAgo(20, 10, 0),
-        expireDate: daysAgo(-10, 23, 59),
-        trackingCode: 'OPG-8F3K2Q',
-        doctorName: 'دکتر مریم احمدی',
-        services: JSON.stringify([
-          { detail_id: 1, service_name: 'عکس OPG کامل فک' },
-          { detail_id: 2, service_name: 'بررسی سینوس' },
-        ]),
-      },
-      {
-        id: 8741,
-        registrationDate: daysAgo(75, 12, 30),
-        expireDate: daysAgo(45, 23, 59),
-        trackingCode: 'OPG-2M9X7D',
-        doctorName: 'دکتر علی رضایی',
-        services: JSON.stringify([{ detail_id: 3, service_name: 'عکس OPG کنترل پس از درمان' }]),
-      },
-      {
-        id: 8302,
-        registrationDate: daysAgo(140, 15, 15),
-        expireDate: daysAgo(110, 23, 59),
-        trackingCode: 'OPG-5T1N4B',
-        doctorName: 'دکتر مریم احمدی',
-        services: JSON.stringify([
-          { detail_id: 4, service_name: 'عکس OPG اولیه' },
-          { detail_id: 5, service_name: 'ارزیابی دندان عقل' },
-        ]),
-      },
-    ],
+    data: [...submitted, ...BASE_OPG_REQUESTS],
   }
 }

@@ -51,7 +51,7 @@
       :enum-type="'financial.refund'"
       :auto-upload="false"
       :max-file-size="1048576 * 10"
-      accept=".jpg, .jpeg, .png, image/*"
+      accept=".jpg, .jpeg, .png, image/*,.pdf"
       class="uploader"
       @upload-success="handleUploadSuccess"
       @upload-error="handleUploadError"
@@ -151,7 +151,7 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (requiresUpload(selectedStatus.value)) {
     if (!uploaderRef.value) {
-      Notif.error('بارگذاری تصویر چک الزامی است')
+      Notif.error('بارگذاری تصویر یا فایل PDF چک الزامی است')
       return
     }
 
@@ -161,7 +161,7 @@ const handleSubmit = async () => {
     }
 
     if (uploadedFileIds.value.length === 0) {
-      Notif.error('بارگذاری تصویر چک الزامی است')
+      Notif.error('بارگذاری تصویر یا فایل PDF چک الزامی است')
       return
     }
   }

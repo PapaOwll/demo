@@ -139,6 +139,9 @@ export const apiSendOpgRequest = (user, data) =>
 
 export const apiGetOpgRequest = (userId) => request.get(`v1/user/${userId}/prescription`)
 
+export const apiSendDrugPrescription = (user, data) =>
+  request.post(`v1/user/${user}/prescription/drugs`, data, { hadSnakize: true })
+
 export const apiGetConversationChannels = () => request.get('v1/user/conversations/channels')
 
 export const apiGetUserConversations = (userId, params) =>

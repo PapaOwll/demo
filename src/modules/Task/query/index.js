@@ -11,6 +11,9 @@ import {
   apiGetTaskType,
   apiSendDueTaskTimes,
   apiUpdateTask,
+  apiSubmitFollowUpAnswers,
+  apiGetFollowUpsSurvey,
+  apiSetCallStatus,
 } from '../api'
 
 import { handleError } from '@/utils/error-handler'
@@ -94,5 +97,27 @@ export const useTaskQuery = (taskId, placeholder, options = {}) =>
     select: (data) => data?.data ?? data,
     enabled: computed(() => !!taskId.value),
     placeholderData: () => placeholder?.value ?? undefined,
+    ...options,
+  })
+
+export const useGetFollowUpsSurvey = (taskId, options = {}) =>
+  useQuery({
+    queryKey: ['survey', 'followups', taskId],
+    queryFn: () => apiGetFollowUpsSurvey(taskId.value),
+    select: (data) => data.data ?? data,
+    ...options,
+  })
+
+export const useSubmitFollowUpAnswers = (options = {}) =>
+  useMutation({
+    mutationFn: ({ taskId, payload }) => apiSubmitFollowUpAnswers(taskId, payload),
+    onError: (err) => handleError(err),
+    ...options,
+  })
+
+export const useSetCallStatusMutation = (options = {}) =>
+  useMutation({
+    mutationFn: ({ taskId, data }) => apiSetCallStatus(taskId, data),
+    onError: (err) => handleError(err),
     ...options,
   })

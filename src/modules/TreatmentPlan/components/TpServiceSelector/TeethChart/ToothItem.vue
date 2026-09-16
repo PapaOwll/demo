@@ -54,10 +54,12 @@ const handleClick = () => {
 </script>
 
 <style lang="scss" scoped>
+// Fluid square: the chart grid column sizes the tooth (capped at 48px there),
+// so rows shrink gracefully on narrow screens instead of overflowing.
 .tooth-item {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 100%;
+  aspect-ratio: 1;
   border: 2px solid $grey-4;
   border-radius: $radius-sm;
   display: flex;
@@ -86,8 +88,9 @@ const handleClick = () => {
     &::after {
       content: '';
       position: absolute;
-      width: 28px;
-      height: 28px;
+      // Scales down with the fluid tooth instead of bleeding past its border.
+      width: min(28px, 70%);
+      aspect-ratio: 1;
       border-radius: $radius-round;
       background-color: rgba($light-blue-6, 0.15);
       z-index: 0;

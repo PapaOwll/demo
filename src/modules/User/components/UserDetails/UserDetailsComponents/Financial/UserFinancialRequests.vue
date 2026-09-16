@@ -63,6 +63,26 @@
 
                   <div class="ufr__row-actions-top">
                     <Button
+                      v-if="hasFiles(item)"
+                      :is-icon-only="true"
+                      :left-icon="IconPaperclip"
+                      variant="flat"
+                      color="grey"
+                      size="sm"
+                      :class="{ 'ufr__view-files--active': isFilesExpanded(item) }"
+                      :aria-label="isFilesExpanded(item) ? 'بستن فایل‌ها' : 'مشاهده فایل‌ها'"
+                      class="ufr__view-files"
+                      @click="() => toggleFiles(item)"
+                    >
+                      <QTooltip anchor="top middle" self="bottom middle">
+                        {{
+                          isFilesExpanded(item)
+                            ? 'بستن فایل‌ها'
+                            : `مشاهده فایل‌ها (${item.files.length.toLocaleString('fa-IR')})`
+                        }}
+                      </QTooltip>
+                    </Button>
+                    <Button
                       v-if="item.description"
                       :is-icon-only="true"
                       :left-icon="isDescriptionExpanded(item) ? IconEye : IconEyeClosed"
@@ -72,7 +92,7 @@
                       :class="{ 'ufr__view-description--active': isDescriptionExpanded(item) }"
                       :aria-label="isDescriptionExpanded(item) ? 'بستن توضیحات' : 'مشاهده توضیحات'"
                       class="ufr__view-description"
-                      @click="toggleDescription(item)"
+                      @click="() => toggleDescription(item)"
                     >
                       <QTooltip anchor="top middle" self="bottom middle">
                         {{ isDescriptionExpanded(item) ? 'بستن توضیحات' : 'مشاهده توضیحات' }}
@@ -140,7 +160,7 @@
                     :left-icon="IconArrowNarrowLeft"
                     size="15px"
                     text="بررسی عودت"
-                    @click="handleView(item)"
+                    @click="() => handleView(item)"
                   />
                 </div>
 
@@ -148,8 +168,38 @@
                   v-if="item.description && isDescriptionExpanded(item)"
                   class="ufr__row-description"
                 >
-                  <span class="ufr__row-description-label">توضیحات</span>
-                  <p class="ufr__row-description-text">{{ item.description }}</p>
+                  <Typography variant="caption" class="ufr__row-description-label">
+                    توضیحات
+                  </Typography>
+                  <Typography variant="body" tag="p" class="ufr__row-description-text">
+                    {{ item.description }}
+                  </Typography>
+                </div>
+
+                <div v-if="hasFiles(item) && isFilesExpanded(item)" class="ufr__row-files">
+                  <span class="ufr__row-files-label">
+                    فایل‌های ضمیمه ({{ item.files.length.toLocaleString('fa-IR') }})
+                  </span>
+                  <div class="ufr__row-files-list">
+                    <Button
+                      v-for="(file, fileIndex) in item.files"
+                      :key="file.id ?? fileIndex"
+                      :is-link="false"
+                      variant="flat"
+                      color="grey"
+                      size="sm"
+                      class="ufr__file"
+                      :left-icon="getFileIcon(file)"
+                      :right-icon="getFileActionIcon(file)"
+                      :text="getFileLabel(file)"
+                      :aria-label="`${getFileActionLabel(file)} ${getFileLabel(file)}`"
+                      @click="() => openFile(item, file)"
+                    >
+                      <QTooltip anchor="top middle" self="bottom middle">
+                        {{ getFileActionLabel(file) }} {{ getFileLabel(file) }}
+                      </QTooltip>
+                    </Button>
+                  </div>
                 </div>
               </QCardSection>
             </QCard>
@@ -180,6 +230,14 @@
       @submit="handleStatusSubmit"
       @close="reviewDialog.show = false"
     />
+
+    <!-- Image Lightbox -->
+    <ImageCarouselLightBox
+      :imgs="lightboxImages"
+      :index="lightboxIndex"
+      :visible="showLightbox"
+      @close="showLightbox = false"
+    />
   </div>
 </template>
 
@@ -193,16 +251,11 @@ import {
   useGetBatchEnumsQuery,
 } from '@/modules/User/query'
 import { convertToJalali } from '@/utils/date-utils'
-import { ENABLE_USER_DETAIL_MOCKS } from '@/mocks/config'
-import {
-  mockGetRefundRequests,
-  mockRefundEnums,
-  mockApproveRefundRequest,
-  mockRejectRefundRequest,
-} from '@/mocks/user-details/financial'
 import { useQueryClient } from '@tanstack/vue-query'
 import { Notif } from '@/data/services/notification-service'
 import Button from '@/base/Button'
+import Typography from '@/base/Typography'
+import ImageCarouselLightBox from '@/components/ImageCarousel'
 import RefundStatusModal from './RefundStatusModal'
 import CheckRefundStatusModal from './CheckRefundStatusModal'
 import {
@@ -210,9 +263,21 @@ import {
   IconCashBanknoteMove,
   IconEye,
   IconEyeClosed,
+  IconExternalLink,
+  IconFile,
+  IconFileText,
+  IconPaperclip,
+  IconPhoto,
 } from '@tabler/icons-vue'
 import { getPerms } from '@/utils/get-perms'
 import { useRoleManager } from '@/composables/use-role-manager'
+import { ENABLE_USER_DETAIL_MOCKS } from '@/mocks/config'
+import {
+  mockGetRefundRequests,
+  mockRefundEnums,
+  mockApproveRefundRequest,
+  mockRejectRefundRequest,
+} from '@/mocks/user-details/financial'
 
 const queryClient = useQueryClient()
 const reviewDialog = reactive({ show: false, item: null })
@@ -232,6 +297,97 @@ const toggleDescription = (item) => {
     next.add(item.id)
   }
   expandedDescriptionIds.value = next
+}
+
+const expandedFilesIds = ref(new Set())
+
+const hasFiles = (item) => Array.isArray(item?.files) && item.files.length > 0
+
+const isFilesExpanded = (item) => {
+  return expandedFilesIds.value.has(item?.id)
+}
+
+const toggleFiles = (item) => {
+  if (!item?.id) return
+  const next = new Set(expandedFilesIds.value)
+  if (next.has(item.id)) {
+    next.delete(item.id)
+  } else {
+    next.add(item.id)
+  }
+  expandedFilesIds.value = next
+}
+
+const FILE_CDN_BASE_URL =
+  import.meta.env.VITE_CDN_BASE_URL || 'https://api.cdn.sitracrm.ir/franchise'
+
+const getFileUrl = (file) => {
+  const path = file?.path || ''
+  if (!path) return ''
+  if (/^https?:\/\//i.test(path)) return path
+  const key = `${path.replace(/\/+$/, '')}/${file.name || ''}`
+  return `${FILE_CDN_BASE_URL}/${key}`
+}
+
+const IMAGE_FORMATS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif'])
+
+// Older payloads may still be snake_case
+const getFileMimeType = (file) => file?.mimeType || file?.mime_type || ''
+
+const getFileFormat = (file) => (file?.format || '').toString().toLowerCase()
+
+const isImageFile = (file) =>
+  getFileMimeType(file).startsWith('image/') || IMAGE_FORMATS.has(getFileFormat(file))
+
+const isPdfFile = (file) =>
+  getFileMimeType(file) === 'application/pdf' || getFileFormat(file) === 'pdf'
+
+const showLightbox = ref(false)
+const lightboxIndex = ref(0)
+const lightboxImages = ref([])
+
+const openFile = (item, file) => {
+  const url = getFileUrl(file)
+  if (!url) {
+    Notif.error('آدرس فایل معتبر نیست')
+    return
+  }
+
+  if (isImageFile(file)) {
+    const images = (item?.files || []).filter((candidate) => isImageFile(candidate))
+    lightboxImages.value = images.map((image) => ({ src: getFileUrl(image) }))
+    lightboxIndex.value = Math.max(images.indexOf(file), 0)
+    showLightbox.value = true
+    return
+  }
+
+  window.open(url, '_blank', 'noopener')
+}
+
+const getFileIcon = (file) => {
+  if (isImageFile(file)) return IconPhoto
+  if (isPdfFile(file)) return IconFileText
+  return IconFile
+}
+
+const getFileActionIcon = (file) => (isImageFile(file) ? IconEye : IconExternalLink)
+
+const getFileActionLabel = (file) => (isImageFile(file) ? 'پیش‌نمایش' : 'باز کردن فایل')
+
+const formatFileSize = (bytes) => {
+  const size = Number(bytes) || 0
+  if (size <= 0) return ''
+  if (size < 1024) return `${size.toLocaleString('fa-IR')} بایت`
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toLocaleString('fa-IR', { maximumFractionDigits: 0 })} کیلوبایت`
+  }
+  return `${(size / (1024 * 1024)).toLocaleString('fa-IR', { maximumFractionDigits: 1 })} مگابایت`
+}
+
+const getFileLabel = (file) => {
+  const format = (file?.format || 'فایل').toString().toUpperCase()
+  const size = formatFileSize(file?.size)
+  return size ? `${format} - ${size}` : format
 }
 
 const { hasAnyRole } = useRoleManager()
@@ -455,12 +611,18 @@ const refreshList = () => {
   queryClient.invalidateQueries({ queryKey: ['refund-requests', userId.value] })
 }
 
+const refreshRelatedLists = () => {
+  queryClient.invalidateQueries({ queryKey: ['user', 'accounting'] })
+  queryClient.invalidateQueries({ queryKey: ['user', 'files'] })
+}
+
 const approveMutation = useApproveRefundRequestMutation({
   ...(ENABLE_USER_DETAIL_MOCKS ? { mutationFn: mockApproveRefundRequest } : {}),
   onSuccess: () => {
     Notif.success('درخواست با موفقیت تایید شد')
     reviewDialog.show = false
     refreshList()
+    refreshRelatedLists()
   },
   onError: (error) => {
     Notif.error(error?.response?.data?.message || 'خطا در تایید درخواست')
@@ -473,6 +635,7 @@ const rejectMutation = useRejectRefundRequestMutation({
     Notif.success('درخواست با موفقیت رد شد')
     reviewDialog.show = false
     refreshList()
+    refreshRelatedLists()
   },
   onError: (error) => {
     Notif.error(error?.response?.data?.message || 'خطا در رد درخواست')
@@ -799,6 +962,39 @@ const handleStatusSubmit = ({ status, description, fileIds }) => {
       color: $blue-7 !important;
       background-color: rgba($blue-6, 0.12);
     }
+  }
+
+  &__view-files {
+    &--active {
+      color: $blue-7 !important;
+      background-color: rgba($blue-6, 0.12);
+    }
+  }
+
+  &__row-files {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: $grey-1;
+    border-radius: $radius-sm;
+    padding: 10px 12px;
+  }
+
+  &__row-files-label {
+    font-size: 11px;
+    color: $grey-5;
+  }
+
+  &__row-files-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__file {
+    border: 1px solid $grey-3;
+    border-radius: $radius-sm;
+    background-color: $white;
   }
 
   &__row-description {

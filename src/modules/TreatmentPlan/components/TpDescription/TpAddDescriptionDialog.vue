@@ -9,12 +9,13 @@
     :transition-duration="700"
     :width="drawerWidth"
     card-class="tpd-drawer"
+    content-class="tpd-dialog"
     @update:model-value="emit('update:visible', $event)"
   >
     <QScrollArea class="tpd-drawer__body">
       <div class="tpd__content">
-        <div v-if="!editData" class="row full-width q-col-gutter-md q-px-md">
-          <div class="col-md-6 col-12">
+        <div v-if="!editData" class="tpd__content-services">
+          <div class="col-md-6 col-12 q-pa-none">
             <SelectField
               v-model="selectedService"
               class="tpd__search-input"
@@ -47,7 +48,7 @@
             </SelectField>
           </div>
 
-          <div class="col-md-6 col-12">
+          <div class="col-md-6 col-12 q-pa-none">
             <SelectField
               v-model="localBookingId"
               class="tpd__booking-select"
@@ -153,7 +154,13 @@ import {
 import { handleError } from '@/utils/error-handler'
 import { deduplicateTeeth } from '@/modules/TreatmentPlan/utils/teeth'
 import { CHART_TYPES, DEFAULT_CHART_TYPE } from '@/modules/TreatmentPlan/constants/chart-types'
-import { getRecommendedChartType } from '@/modules/TreatmentPlan/constants/service-question-types'
+import {
+  BASE_COUNT_REQUIRED_MESSAGE,
+  filterQuestionsByChartType,
+  getRecommendedChartType,
+  getServiceQuestions,
+  hasUnsetBaseCount,
+} from '@/modules/TreatmentPlan/constants/service-question-types'
 import {
   transformDescriptionToApiRequest,
   transformDescriptionToUpdateRequest,
@@ -387,6 +394,19 @@ const handleServiceSelectorSave = async (selectorData) => {
     return
   }
 
+  if (fullServiceObject.value) {
+    const chartQuestions = filterQuestionsByChartType(
+      getServiceQuestions(fullServiceObject.value),
+      selectorData.chartType
+    )
+    if (hasUnsetBaseCount(chartQuestions, selectorData.items)) {
+      Notif.error(BASE_COUNT_REQUIRED_MESSAGE, {
+        caption: 'لطفاً تعداد پایه را انتخاب کنید',
+      })
+      return
+    }
+  }
+
   let requestData
 
   if (props.editData) {
@@ -567,7 +587,9 @@ watch(
         items[editData.questionId] = {
           id: editData.id,
           price: editData.price || 0,
-          unit: editData.unit || 1,
+          // No auto-prefill: an unset base count must be re-picked manually
+          // (the hasUnsetBaseCount guard then blocks the save until then).
+          unit: editData.unit ?? null,
           title: editData.specialServices?.itemTitle || '',
         }
       }
@@ -618,6 +640,11 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: flex-start;
   gap: $spacing-md;
+
+  &-services {
+    width: 100% !important;
+    padding: $spacing-md $spacing-2xl $spacing-md;
+  }
 }
 
 .tpd__search-input,
@@ -688,11 +715,10 @@ onBeforeUnmount(() => {
 
 .tpd__selector-section {
   width: 100%;
-  padding: $spacing-md 0;
+  padding: $spacing-md $spacing-lg $spacing-md $spacing-2xl;
 }
 
 .tpd-drawer {
-  // Inline side anchoring + gap is owned by the base Modal drawer styles.
   height: 92dvh;
   border-radius: $radius-lg !important;
 
@@ -702,15 +728,16 @@ onBeforeUnmount(() => {
   }
 }
 
-// Mobile: the drawer becomes a near-full-width floating bottom sheet. The
-// ~12px inset keeps the backdrop visible and separates it from the
-// TpPermanentPanel top sheet that opens alongside it. The .q-dialog__inner
-// prefix out-ranks Quasar's forced full-width rule on xs screens.
 @include media-breakpoint-down(md) {
+  .q-dialog__inner.tpd-dialog {
+    padding-inline: 0;
+  }
+
   .q-dialog__inner .tpd-drawer {
-    margin: $spacing-md;
-    width: calc(100% - #{$spacing-md * 2}) !important;
-    height: 50dvh;
+    margin: 0;
+    width: 100% !important;
+    height: 100dvh;
+    border-radius: 0 !important;
   }
 
   .tpd__quick-add {

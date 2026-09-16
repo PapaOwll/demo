@@ -1,5 +1,4 @@
 import { getPerms } from '@/utils/get-perms'
-import { TREATMENT_PLAN_STATUS } from '../constants/enums'
 
 const hasAdminPerms = () => {
   return (
@@ -35,11 +34,6 @@ const canCloseTreatmentPlan = () => {
 }
 
 const canEditTreatmentPlan = (plan) => {
-  // Non-active plans: existing permission check
-  if (plan.status !== TREATMENT_PLAN_STATUS.PERFORMED) {
-    return getPerms('treatment-plan', 'update')
-  }
-  // Active plans: check backend-computed flag
   return !!plan.canEditActive
 }
 

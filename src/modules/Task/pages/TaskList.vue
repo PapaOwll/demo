@@ -98,21 +98,15 @@
       </template>
 
       <template #cell-dueDate="{ row }">
-        <Chip
-          :text="convertToJalaliWithTime(row?.dueDate)"
-          variant="outline"
-          color="blue-grey"
-          :removable="false"
-        />
+        <Badge :label="convertToJalaliWithTime(row?.dueDate)" variant="outline" color="blue-grey" />
       </template>
 
       <template #cell-doneAt="{ row }">
-        <Chip
+        <Badge
           v-if="row?.doneAt"
-          :text="convertToJalaliWithTime(row?.doneAt)"
+          :label="convertToJalaliWithTime(row?.doneAt)"
           variant="outline"
           color="green"
-          :removable="false"
         />
         <Typography v-else variant="body" size="4" color="grey">انجام نشده</Typography>
       </template>
@@ -122,7 +116,21 @@
       </template>
 
       <template #cell-actions="{ row }">
-        <div class="flex q-gutter-sm">
+        <div class="flex q-gutter-sm justify-end">
+          <Button
+            v-if="hasToFollow(row.type?.slug)"
+            is-icon-only
+            is-rounded
+            type="button"
+            size="sm"
+            variant="outline"
+            color="primary"
+            :left-icon="IconClipboardCheck"
+            aria-label="نظرسنجی"
+            @click="openFollowUpSurvey(row)"
+          >
+            <QTooltip>نظرسنجی</QTooltip>
+          </Button>
           <Button
             v-if="getPerms('task', 'update')"
             is-icon-only
@@ -176,6 +184,13 @@
     @close="closeTaskFormDialog"
     @submitted="afterSubmit"
   />
+
+  <FollowUpSurveyModal
+    :visible="followUpSurveyVisible"
+    :task="selectedFollowUpTask"
+    @close="closeFollowUpSurvey"
+    @submitted="afterSubmit"
+  />
 </template>
 
 <script setup>
@@ -184,6 +199,7 @@ import { Notif, confirmDialog } from '@/data/services/notification-service'
 import { getPerms } from '@/utils/get-perms'
 import UserMenu from '@/components/UserMenu'
 import TaskForm from '../components/TaskForm'
+import FollowUpSurveyModal from '../components/FollowUpSurveyModal'
 import { useApiDeleteTask, useGetTaskTotalCountMutation, useTaskInfinityQuery } from '../query'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useRoute } from 'vue-router'
@@ -193,12 +209,14 @@ import FilterBuilder from '@/components/FilterBuilder/FilterBuilder'
 import { useHandleFilters } from '@/composables/use-handle-filters'
 import { useTableSort } from '@/composables/use-table-sort'
 import { convertToJalaliWithTime } from '@/utils/date-utils'
-import { IconRefresh, IconPlus, IconEdit, IconTrash } from '@tabler/icons-vue'
+import { IconRefresh, IconPlus, IconEdit, IconTrash, IconClipboardCheck } from '@tabler/icons-vue'
 import { getErrorMessage } from '@/utils/get-error-message'
 import Typography from '@/base/Typography'
 import Button from '@/base/Button'
 import Badge from '@/base/Badge'
+import Chip from '@/base/Chip'
 import ResponsiveTable from '@/components/TableView/ResponsiveTable'
+import { surveyFollowUpEnums } from '../constants/enums'
 
 const queryClient = useQueryClient()
 const route = useRoute()
@@ -206,6 +224,19 @@ const route = useRoute()
 const taskFormVisible = ref(false)
 const selectedUserData = ref(null)
 const totalTasks = ref(null)
+
+const followUpSurveyVisible = ref(false)
+const selectedFollowUpTask = ref(null)
+
+const openFollowUpSurvey = (row) => {
+  selectedFollowUpTask.value = row
+  followUpSurveyVisible.value = true
+}
+
+const closeFollowUpSurvey = () => {
+  followUpSurveyVisible.value = false
+  selectedFollowUpTask.value = null
+}
 
 const {
   formValues,
@@ -251,6 +282,9 @@ const loadingList = computed(() => {
   const hasData = tasksData.value?.length > 0
   return isFetchingNextPage.value || (isLoading.value && !hasData) || isTotalCountLoading.value
 })
+
+const hasToFollow = (slug) =>
+  slug === surveyFollowUpEnums.FIRST_VISIT || slug === surveyFollowUpEnums.TREATMENT_FOLLOW_UP
 
 const onLoadTotalCount = () => {
   totalTasks.value = null
@@ -312,7 +346,6 @@ const afterSubmit = () => {
   totalTasks.value = null
 }
 
-// Delete task with confirmation
 const deleteTaskDialog = (row) => {
   confirmDialog(
     'حذف وظیفه',
@@ -339,12 +372,10 @@ const deleteTaskDialog = (row) => {
   )
 }
 
-// Status color mapping (Chip palette colors)
 const getStatusColor = (status) => {
   return status === 1 ? 'green' : 'red'
 }
 
-// Suggest filter types come from the API — keep them inside the Chip palette
 const CHIP_PALETTE = new Set(['light-blue', 'amber', 'red', 'green', 'blue-grey', 'dark'])
 const getFilterChipColor = (type) => {
   return CHIP_PALETTE.has(type) ? type : 'blue-grey'

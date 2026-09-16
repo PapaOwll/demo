@@ -85,76 +85,101 @@
 
           <div v-else class="refund-check__list">
             <div
-              v-for="check in checks"
+              v-for="check in visibleChecks"
               :key="check.id"
               class="refund-check__card"
-              :class="{ 'refund-check__card--selected': selectedCheckId === check.id }"
-              @click="selectedCheckId = check.id"
+              :class="{
+                'refund-check__card--selected': selectedCheckId === check.id,
+                'refund-check__card--refunded': isChequeRefunded(check),
+              }"
+              @click="selectCheck(check)"
             >
               <Checkbox
                 :model-value="selectedCheckId === check.id"
-                @update:model-value="selectedCheckId = check.id"
+                :disabled="isChequeRefunded(check)"
+                @update:model-value="selectCheck(check)"
               />
               <div class="refund-check__card-info">
                 <div class="refund-check__card-row">
                   <Typography variant="body" size="2" weight="semibold" color="dark">
                     {{ formatChequeAmount(check.amount) }} تومان
                   </Typography>
+                  <Badge
+                    v-if="isChequeRefunded(check)"
+                    variant="outline"
+                    is-rounded
+                    color="red"
+                    label="عودت شده"
+                  />
                   <Typography variant="body" size="4" color="grey">
-                    شماره چک - {{ check.cheque_number || check.chequeNumber }}
+                    شماره چک - {{ check.chequeNumber || '---' }}
                   </Typography>
                 </div>
                 <div class="refund-check__card-row">
                   <div class="refund-check__card-detail">
-                    <Typography variant="caption" weight="medium">بانک صادرکننده :</Typography>
-                    <Typography v-if="check.bank" variant="caption" color="grey">
-                      {{ check.bank?.title }}
+                    <Typography variant="caption" weight="medium">شناسه صیادی</Typography>
+                    <Typography variant="caption" color="grey">
+                      {{ check.sayadNumber || '---' }}
+                    </Typography>
+                  </div>
+                  <div v-if="check.chequeType" class="refund-check__card-detail">
+                    <Typography variant="caption" weight="medium">نوع چک</Typography>
+                    <Typography variant="caption" color="grey">
+                      {{ chequeTypeLabel(check.chequeType) }}
                     </Typography>
                   </div>
                   <div class="refund-check__card-detail">
                     <Typography variant="caption" weight="medium">تاریخ سررسید</Typography>
                     <Typography variant="caption" color="grey">
-                      {{ formatDueDate(check.due_date || check.dueDate) }}
+                      {{ formatChequeDate(check.dueDate) }}
                     </Typography>
                   </div>
                   <div class="refund-check__card-detail">
-                    <Typography variant="caption" weight="medium">شناسه صیادی</Typography>
+                    <Typography variant="caption" weight="medium">تاریخ ثبت</Typography>
                     <Typography variant="caption" color="grey">
-                      {{ check.sayadNumber || check.sayad_number }}
+                      {{ formatChequeDate(check.createdAt) }}
                     </Typography>
                   </div>
                 </div>
+                <!-- Bank and account: which bank issued it and whose account it draws on -->
                 <div
                   v-if="
-                    check.bank_branch_title ||
-                    check.bank_branch_code ||
-                    check.account_number ||
-                    check.account_holder
+                    check.bank ||
+                    check.bankBranchTitle ||
+                    check.bankBranchCode ||
+                    check.accountNumber ||
+                    check.accountHolder
                   "
                   class="refund-check__card-row"
                 >
-                  <div v-if="check.bank_branch_title" class="refund-check__card-detail">
+                  <div v-if="check.bank" class="refund-check__card-detail">
+                    <Typography variant="caption" weight="medium">بانک صادرکننده</Typography>
+                    <Typography variant="caption" color="grey">
+                      {{ check.bank?.title || '---' }}
+                    </Typography>
+                  </div>
+                  <div v-if="check.bankBranchTitle" class="refund-check__card-detail">
                     <Typography variant="caption" weight="medium">نام شعبه بانک</Typography>
                     <Typography variant="caption" color="grey">
-                      {{ check.bank_branch_title }}
+                      {{ check.bankBranchTitle }}
                     </Typography>
                   </div>
-                  <div v-if="check.bank_branch_code" class="refund-check__card-detail">
+                  <div v-if="check.bankBranchCode" class="refund-check__card-detail">
                     <Typography variant="caption" weight="medium">کد شعبه</Typography>
                     <Typography variant="caption" color="grey">
-                      {{ check.bank_branch_code }}
+                      {{ check.bankBranchCode }}
                     </Typography>
                   </div>
-                  <div v-if="check.account_holder" class="refund-check__card-detail">
-                    <Typography variant="caption" weight="medium">صاحب حساب</Typography>
+                  <div v-if="check.accountHolder" class="refund-check__card-detail">
+                    <Typography variant="caption" weight="medium">نام کامل صاحب حساب</Typography>
                     <Typography variant="caption" color="grey">
-                      {{ check.account_holder }}
+                      {{ check.accountHolder }}
                     </Typography>
                   </div>
-                  <div v-if="check.account_number" class="refund-check__card-detail">
-                    <Typography variant="caption" weight="medium">شماره حساب</Typography>
+                  <div v-if="check.accountNumber" class="refund-check__card-detail">
+                    <Typography variant="caption" weight="medium">شماره حساب صاحب چک</Typography>
                     <Typography variant="caption" color="grey">
-                      {{ check.account_number }}
+                      {{ check.accountNumber }}
                     </Typography>
                   </div>
                 </div>
@@ -196,19 +221,28 @@ import BaseModal from '@/base/Modal'
 import TabItem from '@/base/TabItem'
 import TextField from '@/base/TextField'
 import Checkbox from '@/base/Checkbox'
+import Badge from '@/base/Badge'
 import SelectField from '@/base/SelectField'
 import Button from '@/base/Button'
 import Typography from '@/base/Typography'
 import CurrencyField from '@/components/Form/CurrencyField'
 import { convertToJalali } from '@/utils/date-utils'
+import { fetchAllPages } from '@/utils/fetch-all-pages'
 import { numberSeparator } from '@/utils/formatter'
-import { apiGetEnums, apiGetUserCheques, apiCreateRefundRequest } from '@/modules/User/api'
+import {
+  apiGetEnums,
+  apiGetUserCheques,
+  apiCreateRefundRequest,
+  apiGetRefundRequests,
+} from '@/modules/User/api'
 import { apiGetUserActivateTreatmentPlan } from '@/modules/TreatmentPlan/api'
+import { chequeTypeLabels } from '@/modules/User/enums/financialEnums'
 import { ENABLE_USER_DETAIL_MOCKS } from '@/mocks/config'
 import {
   mockRefundEnums,
   mockGetUserCheques,
   mockCreateRefundRequest,
+  mockGetRefundRequests,
 } from '@/mocks/user-details/financial'
 
 const fetchEnumsFn = ENABLE_USER_DETAIL_MOCKS
@@ -218,6 +252,10 @@ const fetchEnumsFn = ENABLE_USER_DETAIL_MOCKS
 const fetchUserChequesFn = ENABLE_USER_DETAIL_MOCKS
   ? () => mockGetUserCheques()
   : (userId) => apiGetUserCheques(userId)
+
+const fetchRefundRequestsFn = ENABLE_USER_DETAIL_MOCKS
+  ? (userId, params) => mockGetRefundRequests(userId, params?.page)
+  : (userId, params) => apiGetRefundRequests(userId, params)
 
 const fetchActiveTpFn = ENABLE_USER_DETAIL_MOCKS
   ? async () => ({
@@ -271,6 +309,31 @@ const refundReferenceTypeEnum = ref({})
 const checks = ref([])
 const checksLoading = ref(false)
 
+// API leaves cheque status null, so completed refunds are found via refund requests.
+const COMPLETED_REFUND_SLUGS = new Set(['approved', 'refunded'])
+const REFUND_REQUESTS_PAGE_LIMIT = 20
+
+const refundedChequeIds = ref(new Set())
+
+const toTime = (value) => {
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? 0 : time
+}
+
+// Newest first
+const visibleChecks = computed(() =>
+  [...checks.value].sort(
+    (a, b) => toTime(b.createdAt) - toTime(a.createdAt) || (b.id ?? 0) - (a.id ?? 0)
+  )
+)
+
+const isChequeRefunded = (check) => refundedChequeIds.value.has(check?.id)
+
+const selectCheck = (check) => {
+  if (isChequeRefunded(check)) return
+  selectedCheckId.value = check.id
+}
+
 const shebaError = computed(() => {
   const digits = cashForm.value.sheba.replace(/\D/g, '')
   if (cashForm.value.sheba && digits.length !== 24) {
@@ -317,8 +380,8 @@ async function onReturnTypeChange(val) {
           activeTp.value?.pre_payment_amount ??
           ''
       }
-    } catch (error) {
-      console.error('Error fetching active treatment plan:', error)
+    } catch {
+      // amount stays empty; submit validation reports it
     }
   }
 }
@@ -346,9 +409,37 @@ async function fetchEnums() {
       ...allRefTypes.filter((item) => item.value !== 'USER_INSTALLMENT_CHEQUE'),
       customOption,
     ]
-  } catch (error) {
-    console.error('Error fetching enums:', error)
+  } catch {
+    // missing types surface at submit
   }
+}
+
+function extractRefundItems(res) {
+  const data = res?.data
+  return data?.items?.data ?? data?.items ?? data ?? []
+}
+
+function isCompletedChequeRefund(item) {
+  return item?.type?.slug === 'cheque' && COMPLETED_REFUND_SLUGS.has(item?.status?.slug)
+}
+
+async function fetchRefundedChequeIds() {
+  const ids = new Set()
+  try {
+    const items = await fetchAllPages(
+      async (page) => extractRefundItems(await fetchRefundRequestsFn(props.userId, { page })),
+      REFUND_REQUESTS_PAGE_LIMIT
+    )
+
+    items.forEach((item) => {
+      if (!isCompletedChequeRefund(item)) return
+      const chequeId = item?.referenceId ?? item?.reference?.id
+      if (chequeId !== null && chequeId !== undefined) ids.add(chequeId)
+    })
+  } catch {
+    // badges are informational; failures must not block the refund flow
+  }
+  refundedChequeIds.value = ids
 }
 
 async function fetchUserCheques() {
@@ -356,23 +447,26 @@ async function fetchUserCheques() {
   checksLoading.value = true
   selectedCheckId.value = null
   try {
-    const res = await fetchUserChequesFn(props.userId)
+    const [res] = await Promise.all([fetchUserChequesFn(props.userId), fetchRefundedChequeIds()])
     checks.value = res?.data?.items || res?.data || []
-  } catch (error) {
-    console.error('Error fetching user cheques:', error)
+  } catch {
     checks.value = []
   } finally {
     checksLoading.value = false
   }
 }
 
-function formatDueDate(date) {
+function formatChequeDate(date) {
   if (!date) return '---'
   return convertToJalali(date, 'jYYYY/jMM/jDD') || '---'
 }
 
 function formatChequeAmount(amount) {
   return numberSeparator(amount || 0)
+}
+
+function chequeTypeLabel(type) {
+  return chequeTypeLabels[type] || '---'
 }
 
 function getReferenceTypeId(returnType) {
@@ -570,6 +664,10 @@ watch(activeTab, (tab) => {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-height: 40vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-inline-end: 4px;
   }
 
   &__card {
@@ -592,6 +690,15 @@ watch(activeTab, (tab) => {
 
     &--selected {
       border-color: $light-blue-6;
+    }
+
+    &--refunded {
+      cursor: not-allowed;
+      opacity: 0.65;
+
+      &:hover {
+        border-color: $grey-4;
+      }
     }
   }
 

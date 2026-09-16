@@ -1,4 +1,5 @@
 import { daysAgo, mockDelay, mockStorage, MOCK_STORAGE_PREFIX } from '@/mocks/mock-storage'
+import { findById } from '@/mock/db'
 
 /**
  * Mocks for the اطلاعات مالی tab:
@@ -429,7 +430,8 @@ export const mockRefundEnums = {
   },
 }
 
-/** cheque list shown inside the عودت چک tab */
+/** cheque list shown inside the عودت چک tab (master cheque model: camelCase
+ * fields + chequeType PHYSICAL/DIGITAL + branch/account details) */
 export const mockGetUserCheques = async () => {
   await mockDelay(400)
   return {
@@ -439,16 +441,28 @@ export const mockGetUserCheques = async () => {
           id: 7001,
           amount: 50_000_000,
           chequeNumber: '۸۴۵۱۲۳',
-          bank: { title: 'بانک ملت' },
+          chequeType: 'PHYSICAL',
+          bank: { id: 1, title: 'بانک ملت' },
+          bankBranchTitle: 'شعبه ونک',
+          bankBranchCode: '۱۲۳۴',
+          accountNumber: '۵۴۱۲۳۴۵۶۷۸',
+          accountHolder: 'علی محمدی',
           dueDate: daysAgo(-30, 9, 0),
+          createdAt: daysAgo(35, 11, 20),
           sayadNumber: '۱۲۳۴۵۶۷۸۹۰۱۲۳۴۵۶',
         },
         {
           id: 7002,
           amount: 30_000_000,
           chequeNumber: '۹۱۲۳۴۵',
-          bank: { title: 'بانک سامان' },
+          chequeType: 'DIGITAL',
+          bank: { id: 3, title: 'بانک سامان' },
+          bankBranchTitle: 'شعبه سعادت‌آباد',
+          bankBranchCode: '۹۸۷۶',
+          accountNumber: '۹۸۷۶۵۴۳۲۱۰',
+          accountHolder: 'علی محمدی',
           dueDate: daysAgo(-60, 9, 0),
+          createdAt: daysAgo(28, 16, 5),
           sayadNumber: '۹۸۷۶۵۴۳۲۱۰۹۸۷۶۵۴',
         },
       ],
@@ -472,17 +486,39 @@ const BASE_REFUNDS = (userId) => [
     id: 5502,
     amount: 30_000_000,
     createdAt: daysAgo(25, 14, 45),
-    type: { id: 2, title: 'عودت چک', slug: 'check' },
-    referenceType: { id: 1, title: 'حساب بیمار' },
+    type: { id: 2, title: 'عودت چک', slug: 'cheque' },
+    referenceType: { id: 4, title: 'چک قسط کاربر' },
     status: { id: 2, title: 'عودت شده', slug: 'refunded' },
     description: 'عودت چک بلااستفاده',
+    // referenceId links the refund to cheque 7002 — the عودت چک tab marks that
+    // cheque as already refunded (badge + disabled selection)
+    referenceId: 7002,
     reference: {
+      id: 7002,
       bank: 'بانک سامان',
       sayyadi: '۹۸۷۶۵۴۳۲۱۰۹۸۷۶۵۴',
       checkNumber: '۹۱۲۳۴۵',
       dueDate: daysAgo(60, 9, 0),
       amount: 30_000_000,
     },
+    files: [
+      {
+        id: 9101,
+        name: 'scan-cheque-5502.pdf',
+        path: 'refund-requests/5502',
+        format: 'pdf',
+        mimeType: 'application/pdf',
+        size: 486_200,
+      },
+      {
+        id: 9102,
+        name: 'receipt-5502.pdf',
+        path: 'refund-requests/5502',
+        format: 'pdf',
+        mimeType: 'application/pdf',
+        size: 132_800,
+      },
+    ],
     userId,
   },
 ]
@@ -492,7 +528,14 @@ const REFUND_STATUS_OVERRIDES_KEY = 'refund-status-overrides'
 
 const applyRefundStatusOverrides = (items) => {
   const overrides = mockStorage.get(REFUND_STATUS_OVERRIDES_KEY, {})
-  return items.map((r) => (overrides[r.id] ? { ...r, status: overrides[r.id] } : r))
+  return items.map((r) => {
+    const patch = overrides[r.id]
+    if (!patch) return r
+    // legacy overrides stored a bare status object; newer ones may carry files too
+    const status = patch.status ?? patch
+    const files = patch.files ?? r.files
+    return { ...r, status, files }
+  })
 }
 
 export const mockGetRefundRequests = async (userId, params) => {
@@ -525,12 +568,13 @@ export const mockCreateRefundRequest = async (payload) => {
     createdAt: new Date().toISOString(),
     type:
       payload.type_id === 2
-        ? { id: 2, title: 'عودت چک', slug: 'check' }
+        ? { id: 2, title: 'عودت چک', slug: 'cheque' }
         : { id: 1, title: 'عودت نقدی', slug: 'cash' },
     referenceType: { id: 1, title: 'حساب بیمار' },
     status: { id: 1, title: 'در انتظار بررسی', slug: 'pending' },
     sheba: payload.sheba || null,
     description: payload.description || null,
+    referenceId: payload.reference_id ?? null,
     reference: isCheque ? payload.reference : null,
     userId: payload.user_id,
   }
@@ -545,9 +589,37 @@ const setRefundStatusOverride = (id, status) => {
   }))
 }
 
-export const mockApproveRefundRequest = async ({ id }) => {
+/**
+ * Files uploaded through CheckRefundStatusModal land in the network mock db
+ * (v1/file/upload). Only pdf entries get image-preview metadata — uploaded
+ * images hold data URLs that the component would try to resolve against the
+ * CDN base, so they render as plain file rows instead of a broken lightbox.
+ */
+const refundFilesFromUploadIds = (fileIds) => {
+  if (!Array.isArray(fileIds) || fileIds.length === 0) return null
+  return fileIds
+    .map((fid) => findById('files', fid))
+    .filter(Boolean)
+    .map((f) => {
+      const ext = (f.name?.split('.').pop() || '').toLowerCase()
+      const isPdf = ext === 'pdf'
+      return {
+        id: f.id,
+        name: f.name,
+        path: isPdf ? f.path : '',
+        format: isPdf ? 'pdf' : '',
+        mimeType: isPdf ? 'application/pdf' : '',
+      }
+    })
+}
+
+export const mockApproveRefundRequest = async ({ id, file_ids: fileIds }) => {
   await mockDelay(500)
-  setRefundStatusOverride(id, { id: 2, title: 'عودت شده', slug: 'refunded' })
+  const files = refundFilesFromUploadIds(fileIds)
+  mockStorage.update(REFUND_STATUS_OVERRIDES_KEY, {}, (overrides) => ({
+    ...overrides,
+    [id]: { status: { id: 2, title: 'عودت شده', slug: 'refunded' }, ...(files ? { files } : {}) },
+  }))
   return { data: { success: true, message: 'درخواست عودت تایید شد', id } }
 }
 
