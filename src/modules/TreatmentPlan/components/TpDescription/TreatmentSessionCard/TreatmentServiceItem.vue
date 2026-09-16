@@ -54,7 +54,12 @@
           @click="$emit('toggleExpand', row?.id)"
         />
 
-        <!-- <IconPencil size="20" class="tpd-service__action-icon" /> -->
+        <IconPencil
+          v-if="getPerms('user', 'manage', false, undefined)"
+          size="20"
+          class="tpd-service__action-icon"
+          @click="$emit('edit', row)"
+        />
 
         <IconTrash
           v-if="getPerms('user', 'manage', false, undefined)"
@@ -76,7 +81,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { IconEye, IconEyeClosed, IconTrash } from '@tabler/icons-vue'
+import { IconEye, IconEyeClosed, IconPencil, IconTrash } from '@tabler/icons-vue'
 import Typography from '@/base/Typography'
 import { numberSeparator } from '@/utils/formatter'
 import { getPerms } from '@/utils/get-perms'
@@ -89,7 +94,7 @@ const props = defineProps({
   isExpanded: { type: Boolean, default: false },
 })
 
-defineEmits(['toggleExpand', 'delete'])
+defineEmits(['toggleExpand', 'delete', 'edit'])
 
 const toothNumbers = computed(() => props.getExactToothNumbers(props.row))
 </script>

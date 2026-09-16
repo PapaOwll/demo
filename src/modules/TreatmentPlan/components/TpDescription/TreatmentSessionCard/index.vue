@@ -43,6 +43,7 @@
       :is-expanded="isRowExpanded(row?.id)"
       @toggle-expand="toggleExpand"
       @delete="handleDelete"
+      @edit="handleEdit"
     />
 
     <UserRadiologyUploader
@@ -89,6 +90,7 @@ const props = defineProps({
   isRowExpanded: { type: Function, required: true },
   toggleExpand: { type: Function, required: true },
   handleDelete: { type: Function, required: true },
+  handleEdit: { type: Function, required: true },
 })
 
 const queryClient = useQueryClient()

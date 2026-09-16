@@ -239,25 +239,23 @@ export const mockGetTreatmentPlanDetail = async (idOrKey) => {
   throw new Error('طرح درمان یافت نشد')
 }
 
+/** serves enriched with their items' questions — the preview tab list shape */
+const toServeItems = (plan) =>
+  (plan.serves ?? []).map((serve) => ({
+    ...serve,
+    questions: plan.items.find((item) => item.serveId === serve.serveId)?.questions ?? [],
+  }))
+
 /** serve items (tab list for the public preview), matched by hash key — with embedded questions */
 export const mockGetServeItemsByKey = async (key) => {
   await mockDelay(400)
   const plan = PLANS.find((p) => p.publicHashKey === key)
-  if (plan) {
-    return plan.serves.map((serve) => ({
-      ...serve,
-      questions: plan.items.find((item) => item.serveId === serve.serveId)?.questions ?? [],
-    }))
-  }
+  if (plan) return toServeItems(plan)
   // Fall back to the db-seeded plans (Bookings → شرح درمان flow) so the
   // persisted plans' public previews (/tp/demo-tp-501 …) render too.
   const dbPlan = coll('treatmentPlans').find((p) => p.public_hash_key === key)
   if (!dbPlan) return []
-  const camelPlan = camelize(dbPlan)
-  return (camelPlan.serves ?? []).map((serve) => ({
-    ...serve,
-    questions: camelPlan.items.find((item) => item.serveId === serve.serveId)?.questions ?? [],
-  }))
+  return toServeItems(camelize(dbPlan))
 }
 
 export const mockGetDoctorReviews = async () => {

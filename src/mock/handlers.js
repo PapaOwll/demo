@@ -914,6 +914,17 @@ on('post', String.raw`v1/booking/(\d+)/cancellation`, ({ match }) => {
   persist()
   return ok({ data: b ?? {} })
 })
+// The booking forms send a scalar treatment_plan_id — resolve it to the slim
+// {id, public_hash_key, public_link} ref that booking rows, TpDescriptionButton
+// and the TP-description booking dropdown (filter[treatment_plan]) consume.
+// Callers only invoke it when the body carries the linkage key (so a stored
+// ref is kept when the form omits the field entirely).
+const resolveTreatmentPlanRef = (body) => {
+  const tp = findById('treatmentPlans', body?.treatment_plan_id)
+  return tp
+    ? { id: tp.id, public_hash_key: tp.public_hash_key, public_link: `/tp/${tp.public_hash_key}` }
+    : null
+}
 on('post', 'v1/booking', ({ body }) => {
   const item = {
     ...body,
@@ -923,6 +934,7 @@ on('post', 'v1/booking', ({ body }) => {
     status: { id: 1, title: 'ثبت شده' },
     created_by: R.currentUser.user.name,
   }
+  if (body && 'treatment_plan_id' in body) item.treatment_plan = resolveTreatmentPlanRef(body)
   coll('bookings').unshift(item)
   persist()
   return ok({ data: item, message: 'نوبت با موفقیت ثبت شد' })
@@ -957,7 +969,10 @@ on('get', String.raw`v1/booking/(\d+)`, ({ match }) =>
 )
 on('put', String.raw`v1/booking/(\d+)`, ({ match, body }) => {
   const item = findById('bookings', match[1])
-  if (item) Object.assign(item, body)
+  if (item) {
+    Object.assign(item, body)
+    if (body && 'treatment_plan_id' in body) item.treatment_plan = resolveTreatmentPlanRef(body)
+  }
   persist()
   return ok({ data: item ?? {} })
 })
@@ -1184,18 +1199,28 @@ const normalizeTeeth = (teeth) =>
     return (Array.isArray(numbers) ? numbers : [numbers]).map((n) => ({ position, number: n }))
   })
 
+// Meta for a performed row — question/item titles resolved from the pricing
+// catalog. Unknown ids null the question meta explicitly so PUT edits never
+// keep stale titles from the previous item.
 const resolveServeItemMeta = (serveId, itemId) => {
   const serve = coll('serves').find((s) => String(s.id) === String(serveId))
   if (!serve) return {}
   const question = (serve.questions ?? []).find((qq) =>
     (qq.items ?? []).some((c) => String(c.id) === String(itemId))
   )
-  if (!question) return { serve_industry_title: serve.title }
+  if (!question) {
+    return {
+      serve_industry_title: serve.title,
+      question_id: null,
+      question_title: null,
+      item_title: null,
+    }
+  }
   return {
     serve_industry_title: serve.title,
     question_id: question.id,
     question_title: question.title,
-    item_title: (question.items ?? []).find((c) => String(c.id) === String(itemId))?.title,
+    item_title: (question.items ?? []).find((c) => String(c.id) === String(itemId))?.title ?? null,
   }
 }
 
@@ -1289,16 +1314,26 @@ on('post', String.raw`v2/treatment-plan/(\d+)/perform`, ({ match, body }) => {
     coll('performedServes').unshift(row)
     created.push(row)
   })
+  if (created.length === 0) {
+    return { status: 422, body: { message: 'هیچ خدمتی برای ثبت شرح درمان انتخاب نشده است' } }
+  }
   syncPerformedFlags(match[1], body?.booking_id)
   return ok({ data: created, message: 'شرح درمان با موفقیت ثبت شد' })
 })
 on('put', String.raw`v2/treatment-plan/(\d+)/perform/items/(\d+)`, ({ match, body }) => {
   const row = findById('performedServes', match[2])
   if (row && String(row.treatment_plan_id) === String(match[1])) {
+    const oldBookingId = row.booking_id
     const itemId = body?.serve_industry_item_id ?? body?.serveIndustryItemId ?? row.item_id
     const unit = Math.max(1, Number(body?.unit) || row.unit)
     const unitPrice = Number(body?.price)
-    const price = Number.isFinite(unitPrice) && unitPrice >= 0 ? unit * unitPrice : row.price
+    // body.price is the per-unit price; when omitted keep the stored unit price.
+    const price =
+      Number.isFinite(unitPrice) && unitPrice >= 0
+        ? unit * unitPrice
+        : row.unit > 0
+          ? Math.round((row.price / row.unit) * unit)
+          : row.price
     Object.assign(row, resolveServeItemMeta(row.serve_industry_id, itemId), {
       item_id: itemId,
       unit,
@@ -1309,6 +1344,10 @@ on('put', String.raw`v2/treatment-plan/(\d+)/perform/items/(\d+)`, ({ match, bod
       booking_id: body?.booking_id ?? row.booking_id,
     })
     syncPerformedFlags(match[1], row.booking_id)
+    // Reassigning the booking must clear the performed flags on the old one.
+    if (oldBookingId != null && String(oldBookingId) !== String(row.booking_id)) {
+      syncPerformedFlags(match[1], oldBookingId)
+    }
   }
   return ok({ data: row ?? {}, message: 'شرح درمان با موفقیت ویرایش شد' })
 })

@@ -439,6 +439,44 @@ export function transformDescriptionToApiRequest(descriptionData) {
  */
 
 /**
+ * Convert stored teeth entries ({position, number|number[]}) to the string
+ * tooth ids (1-28) the teeth chart consumes. Quadrant ranges follow the
+ * standard mapping: 1-7 upper right (TR), 8-14 upper left (TL),
+ * 15-21 lower right (BR), 22-28 lower left (BL).
+ *
+ * @param {Array<Object>} teeth - Stored teeth entries
+ * @returns {string[]} Selected tooth ids
+ */
+export function extractSelectedTeethFromItem(teeth) {
+  const selectedTeeth = []
+  if (teeth && teeth.length > 0) {
+    teeth.forEach((toothData) => {
+      if (!toothData.position || !toothData.number) return
+
+      const numbersArray = Array.isArray(toothData.number) ? toothData.number : [toothData.number]
+
+      const positionRanges = {
+        TL: [8, 14],
+        TR: [1, 7],
+        BL: [22, 28],
+        BR: [15, 21],
+      }
+
+      const [minId, maxId] = positionRanges[toothData.position] || [1, 28]
+
+      numbersArray.forEach((displayNum) => {
+        for (let id = minId; id <= maxId; id += 1) {
+          if (teethMapping[id] === displayNum) {
+            selectedTeeth.push(String(id))
+          }
+        }
+      })
+    })
+  }
+  return selectedTeeth
+}
+
+/**
  * @param {Array<Object>} apiData - Array of booking items from API
  * @returns {TableTreatmentItem[]} Array of table-formatted treatment items
  */
@@ -475,31 +513,7 @@ export function transformApiResponseToTableFormat(apiData) {
         .join(', ')
     }
 
-    const selectedTeeth = []
-    if (item.teeth && item.teeth.length > 0) {
-      item.teeth.forEach((toothData) => {
-        if (!toothData.position || !toothData.number) return
-
-        const numbersArray = Array.isArray(toothData.number) ? toothData.number : [toothData.number]
-
-        const positionRanges = {
-          TL: [1, 7],
-          TR: [8, 14],
-          BL: [15, 21],
-          BR: [22, 28],
-        }
-
-        const [minId, maxId] = positionRanges[toothData.position] || [1, 28]
-
-        numbersArray.forEach((displayNum) => {
-          for (let id = minId; id <= maxId; id += 1) {
-            if (teethMapping[id] === displayNum) {
-              selectedTeeth.push(String(id))
-            }
-          }
-        })
-      })
-    }
+    const selectedTeeth = extractSelectedTeethFromItem(item.teeth)
 
     const jawBadgeText = getJawBadgeText(selectedTeeth)
 
@@ -682,35 +696,6 @@ export function transformDescriptionToUpdateRequest({
     teeth: teethData,
     description: description || '',
   }
-}
-
-function extractSelectedTeethFromItem(teeth) {
-  const selectedTeeth = []
-  if (teeth && teeth.length > 0) {
-    teeth.forEach((toothData) => {
-      if (!toothData.position || !toothData.number) return
-
-      const numbersArray = Array.isArray(toothData.number) ? toothData.number : [toothData.number]
-
-      const positionRanges = {
-        TL: [8, 14],
-        TR: [1, 7],
-        BL: [22, 28],
-        BR: [15, 21],
-      }
-
-      const [minId, maxId] = positionRanges[toothData.position] || [1, 28]
-
-      numbersArray.forEach((displayNum) => {
-        for (let id = minId; id <= maxId; id += 1) {
-          if (teethMapping[id] === displayNum) {
-            selectedTeeth.push(String(id))
-          }
-        }
-      })
-    })
-  }
-  return selectedTeeth
 }
 
 export function transformBookingsToCardFormat(apiData) {

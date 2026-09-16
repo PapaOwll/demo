@@ -113,6 +113,7 @@
                 :is-row-expanded="isRowExpanded"
                 :toggle-expand="toggleExpand"
                 :handle-delete="handleDelete"
+                :handle-edit="handleEdit"
               />
             </div>
           </div>
@@ -153,7 +154,10 @@ import {
   useTreatmentPlanBookingsQuery,
 } from '@/modules/TreatmentPlan/query'
 import { useQueryClient } from '@tanstack/vue-query'
-import { transformApiResponseToTableFormat } from '@/modules/TreatmentPlan/utils/tp-description-transformers'
+import {
+  extractSelectedTeethFromItem,
+  transformApiResponseToTableFormat,
+} from '@/modules/TreatmentPlan/utils/tp-description-transformers'
 import { teethMapping } from '@/modules/TreatmentPlan/constants/teeth'
 import { convertToJalali, formatDate } from '@/utils/date-utils'
 import { getPerms } from '@/utils/get-perms'
@@ -394,6 +398,28 @@ const handleDelete = (row) => {
 
 const handleChangeTpId = (e) => {
   selectedTpId.value = e
+}
+
+// Raw GET row → the editData contract TpAddDescriptionDialog consumes:
+// tpdId targets the stored row (PUT/DELETE url), id is the catalog item id
+// (form preselect + serve_industry_item_id) and price must be the UNIT price.
+const handleEdit = (row) => {
+  editingRow.value = {
+    tpdId: row.id,
+    id: row.itemId,
+    questionId: row.questionId,
+    serveId: row.serveIndustryId,
+    price: row.unit > 0 ? Math.round(Number(row.price) / row.unit) : Number(row.price) || 0,
+    unit: row.unit,
+    selectedTeeth: extractSelectedTeethFromItem(row.teeth),
+    selectedRegions: [],
+    description: row.description || '',
+    specialServices: {
+      questionTitle: row.questionTitle,
+      itemTitle: row.itemTitle,
+    },
+  }
+  openModal()
 }
 
 watch(isShowModal, (isOpen) => {

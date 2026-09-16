@@ -83,7 +83,7 @@ const bookingBase = (id, u, type, date, time, treatmentPlan = null) => ({
   time,
   // Combined datetime — the bookings list column and the TP booking dropdown read bookingAt.
   booking_at: `${date} ${time}:00`,
-  doctor: doctors[0],
+  doctor: doctors[id % doctors.length],
   branch,
   serves: [],
   treatment_plan: treatmentPlan,
@@ -299,7 +299,7 @@ export const performedServes = [
     price: 15_000_000,
     price_with_profit: 15_000_000,
     teeth: [
-      { position: 'TL', number: 5 },
+      { position: 'TL', number: 3 },
       { position: 'TL', number: 4 },
     ],
     description: 'ایمپلنت کره‌ای برای دو دندان فک بالا چپ در جلسه اول انجام شد.',

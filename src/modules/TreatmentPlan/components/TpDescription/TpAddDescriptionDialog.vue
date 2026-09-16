@@ -441,7 +441,8 @@ const handleServiceSelectorSave = async (selectorData) => {
     if (props.editData) {
       await updateDescriptionMutation.mutateAsync({
         tpId,
-        itemId: props.editData.id,
+        // tpdId targets the stored performed row; `id` is the catalog item id
+        itemId: props.editData.tpdId ?? props.editData.id,
         ...requestData,
       })
 
