@@ -125,7 +125,7 @@ export const currentUser = {
         sub('operatorSetting', 'تنظیمات کارمندان'),
         sub('roleSetting', 'تنظیمات دسترسی'),
         sub('personalSetting', 'تنظیمات شخصی'),
-        sub('schedule', 'برنامه هفتگی'),
+        sub('schedule', 'تقویم'),
       ]),
     ],
   },
