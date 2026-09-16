@@ -259,6 +259,22 @@ export const diseases = [
   { id: 10, name: 'هپاتیت' },
 ]
 
+// File-row statuses — the TpDescription card filters on id 15 / slug
+// 'verified'. Shared by the seeds and the upload handler.
+export const FILE_STATUSES = {
+  verified: { id: 15, slug: 'verified', title: 'تایید شده' },
+  pending: { id: 14, slug: 'pending', title: 'در انتظار تایید' },
+}
+
+// Placeholder paths for mock file rows (files live under public/mocks).
+// Non-radiology types fall back to the neutral document placeholder.
+const FILE_PLACEHOLDERS = {
+  'user.opg': 'sample-opg.svg',
+  'user.cbct': 'sample-cbct.svg',
+}
+export const filePlaceholder = (type) =>
+  `${import.meta.env.BASE_URL}mocks/${FILE_PLACEHOLDERS[type] ?? 'sample-doc.svg'}`
+
 // Weekly working hours (JS getDay(): 0=Sun … 6=Sat), 09:00–20:00 every day.
 export const workingHours = Array.from({ length: 7 }, (_, day) => ({
   day_of_week: day,

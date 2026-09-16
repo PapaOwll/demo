@@ -2,7 +2,13 @@
 // Field names mirror the real API snapshots exactly; volume kept minimal.
 
 // Rooms + roles seeds live with the other static clinic reference data.
-import { serves as referenceServes, doctors, diseases } from './reference'
+import {
+  serves as referenceServes,
+  doctors,
+  diseases,
+  FILE_STATUSES,
+  filePlaceholder,
+} from './reference'
 
 export { rooms, roles } from './reference'
 
@@ -245,6 +251,7 @@ const tpQuestionsFromReference = (serveId) => {
 
 const treatmentPlan = (id, u, serveId, price, teeth, extra = {}) => {
   const serve = referenceServes.find((s) => s.id === serveId)
+  const prepay = Math.round(price / 6)
   return {
     id,
     user: {
@@ -265,7 +272,7 @@ const treatmentPlan = (id, u, serveId, price, teeth, extra = {}) => {
     total_price: price,
     total_cost: price,
     final_price: price,
-    prepay: Math.round(price / 6),
+    prepay,
     description: null,
     public_hash_key: `demo-tp-${id}`,
     // serves[].teeth is the showable-teeth format used by calculateTeeth
@@ -280,8 +287,8 @@ const treatmentPlan = (id, u, serveId, price, teeth, extra = {}) => {
         questions: tpQuestionsFromReference(serveId),
       },
     ],
-    // FinancialDetailsDialog reads these directly off the plan row.
-    prepayment: Math.round(price / 6),
+    // FinancialDetailsDialog reads prepayment/prepayment_percent off the row.
+    prepayment: prepay,
     prepayment_percent: 20,
     created_at: '2026-09-05 10:00:00',
     branch,
@@ -412,50 +419,23 @@ export const transactions = [
   },
 ]
 
-// Radiology/medical documents (v1/user/{id}/files/{type}). Status id 15 /
-// slug 'verified' is what the TpDescription card filters on; the mock
+// Radiology/medical documents (v1/user/{id}/files/{type}). Statuses and
+// placeholder paths come from the shared reference constants; the mock
 // placeholders under /mocks keep the image preview modal renderable.
-const verifiedStatus = { id: 15, slug: 'verified', title: 'تایید شده' }
-const pendingStatus = { id: 14, slug: 'pending', title: 'در انتظار تایید' }
-
-const radFile = (id, userId, type, name, fileName, status, createdAt) => ({
+const radFile = (id, userId, type, name, status, createdAt) => ({
   id,
   user_id: userId,
   entity_type: 'user',
   entity_id: userId,
   type,
   name,
-  path: `${import.meta.env.BASE_URL}mocks/${fileName}`,
+  path: filePlaceholder(type),
   status,
   created_at: createdAt,
 })
 
 export const files = [
-  radFile(
-    3001,
-    1,
-    'user.opg',
-    'OPG-کل-فک.jpg',
-    'sample-opg.svg',
-    verifiedStatus,
-    '2026-08-20 10:30:00'
-  ),
-  radFile(
-    3002,
-    1,
-    'user.cbct',
-    'CBCT-ناحیه-46.jpg',
-    'sample-cbct.svg',
-    verifiedStatus,
-    '2026-09-02 14:10:00'
-  ),
-  radFile(
-    3003,
-    2,
-    'user.opg',
-    'OPG-اولیه.jpg',
-    'sample-opg.svg',
-    pendingStatus,
-    '2026-09-10 09:00:00'
-  ),
+  radFile(3001, 1, 'user.opg', 'OPG-کل-فک.jpg', FILE_STATUSES.verified, '2026-08-20 10:30:00'),
+  radFile(3002, 1, 'user.cbct', 'CBCT-ناحیه-46.jpg', FILE_STATUSES.verified, '2026-09-02 14:10:00'),
+  radFile(3003, 2, 'user.opg', 'OPG-اولیه.jpg', FILE_STATUSES.pending, '2026-09-10 09:00:00'),
 ]

@@ -276,6 +276,7 @@ export const useGetTreatmentPlanTotalCreditQuery = (treatmentPlanId, options = {
   useQuery({
     queryKey: ['treatment-plan', 'total-credit', treatmentPlanId],
     queryFn: () => apiGetTreatmentPlanTotalCredit(unref(treatmentPlanId)),
+    select: (data) => data?.data ?? data,
     enabled: !!unref(treatmentPlanId),
     ...options,
   })

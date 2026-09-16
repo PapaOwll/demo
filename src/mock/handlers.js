@@ -531,12 +531,10 @@ on('delete', String.raw`v1/financial/installment/(\d+)`, ({ match }) => {
 on('get', 'v1/file/status', () => ok({ data: [] }))
 // BaseUploader (FormData: files[0][file], files[0][type], entity_id, entity_type).
 // Rows are persisted into the files collection so uploaded radiology images
-// survive reloads; small images are inlined as data URLs, larger payloads fall
-// back to the type's sample placeholder.
-const UPLOAD_PLACEHOLDERS = {
-  'user.opg': 'sample-opg.svg',
-  'user.cbct': 'sample-cbct.svg',
-}
+// survive reloads; small images are inlined as data URLs (capped low — the
+// whole db shares one localStorage key), larger payloads fall back to the
+// type's sample placeholder.
+const INLINE_IMAGE_MAX_BYTES = 300_000
 const readFileAsDataUrl = (file) =>
   new Promise((resolve) => {
     const reader = new FileReader()
@@ -554,12 +552,13 @@ on('post', 'v1/file/upload', async ({ body }) => {
     const file = entries['files[0][file]']
     const type = entries['files[0][type]'] || 'user.docs'
     const entityId = Number(entries.entity_id) || null
+    if (entityId === null) {
+      // eslint-disable-next-line no-console
+      console.warn('[mock] file/upload without entity_id — row will be orphaned')
+    }
     if (file && typeof File !== 'undefined' && file instanceof File) {
-      const inlineable = /^image\//.test(file.type) && file.size <= 1_500_000
+      const inlineable = /^image\//.test(file.type) && file.size <= INLINE_IMAGE_MAX_BYTES
       const dataUrl = inlineable ? await readFileAsDataUrl(file) : null
-      const path =
-        dataUrl ??
-        `${import.meta.env.BASE_URL}mocks/${UPLOAD_PLACEHOLDERS[type] ?? 'sample-opg.svg'}`
       created.push({
         id: nextId('files'),
         user_id: entityId,
@@ -567,8 +566,8 @@ on('post', 'v1/file/upload', async ({ body }) => {
         entity_id: entityId,
         type,
         name: file.name,
-        path,
-        status: { id: 15, slug: 'verified', title: 'تایید شده' },
+        path: dataUrl ?? R.filePlaceholder(type),
+        status: R.FILE_STATUSES.verified,
         created_at: nowStr(),
       })
     }
