@@ -244,6 +244,21 @@ export const doctors = [
   { id: 888, name: 'دکتر کاظمی', role: { id: 4, title: 'دکتر' } },
 ]
 
+// Medical-history checkbox catalog (v1/user/diseases) — TpdDisease and the
+// user medical-info payload both reference these ids.
+export const diseases = [
+  { id: 1, name: 'دیابت' },
+  { id: 2, name: 'فشار خون بالا' },
+  { id: 3, name: 'بیماری قلبی' },
+  { id: 4, name: 'آلرژی به دارو' },
+  { id: 5, name: 'بارداری' },
+  { id: 6, name: 'اختلال انعقاد خون' },
+  { id: 7, name: 'بیماری تیروئید' },
+  { id: 8, name: 'آسم' },
+  { id: 9, name: 'صرع' },
+  { id: 10, name: 'هپاتیت' },
+]
+
 // Weekly working hours (JS getDay(): 0=Sun … 6=Sat), 09:00–20:00 every day.
 export const workingHours = Array.from({ length: 7 }, (_, day) => ({
   day_of_week: day,

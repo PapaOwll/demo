@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" role="img" aria-label="CBCT">
+  <rect width="500" height="500" fill="#1c1c1e"/>
+  <g fill="none" stroke="#8a8a8e" stroke-width="3">
+    <path d="M250 90 Q 340 100 370 200 Q 390 300 300 350 Q 250 375 200 350 Q 110 300 130 200 Q 160 100 250 90 Z"/>
+    <path d="M250 140 Q 305 148 322 210 Q 335 272 280 305 Q 250 320 220 305 Q 165 272 178 210 Q 195 148 250 140 Z"/>
+  </g>
+  <g fill="#d1d1d6">
+    <circle cx="215" cy="190" r="14"/>
+    <circle cx="250" cy="178" r="15"/>
+    <circle cx="285" cy="190" r="14"/>
+    <circle cx="205" cy="250" r="13"/>
+    <circle cx="242" cy="258" r="14"/>
+    <circle cx="280" cy="250" r="13"/>
+  </g>
+  <text x="250" y="470" fill="#6c6c70" font-family="sans-serif" font-size="20" text-anchor="middle">CBCT — نمونه دمو</text>
+</svg>

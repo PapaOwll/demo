@@ -9,7 +9,8 @@ const delay = (ms) =>
 export const mockAdapter = async (config) => {
   await delay(100 + Math.random() * 150)
 
-  const result = handleMockRequest(config)
+  // Handlers may be async (e.g. uploads reading File payloads).
+  const result = await handleMockRequest(config)
 
   const response = {
     data: result.body,

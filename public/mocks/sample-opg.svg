@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" role="img" aria-label="OPG">
+  <rect width="800" height="400" fill="#1c1c1e"/>
+  <g fill="none" stroke="#8a8a8e" stroke-width="3">
+    <path d="M120 200 Q 150 90 260 80 Q 340 74 400 110 Q 460 74 540 80 Q 650 90 680 200 Q 650 310 540 320 Q 460 326 400 290 Q 340 326 260 320 Q 150 310 120 200 Z"/>
+  </g>
+  <g fill="#d1d1d6">
+    <!-- upper arch -->
+    <rect x="170" y="150" width="22" height="40" rx="6"/>
+    <rect x="205" y="128" width="24" height="52" rx="6"/>
+    <rect x="243" y="118" width="24" height="56" rx="6"/>
+    <rect x="281" y="122" width="24" height="54" rx="6"/>
+    <rect x="319" y="132" width="22" height="46" rx="6"/>
+    <rect x="350" y="140" width="20" height="40" rx="6"/>
+    <rect x="430" y="140" width="20" height="40" rx="6"/>
+    <rect x="461" y="132" width="22" height="46" rx="6"/>
+    <rect x="499" y="122" width="24" height="54" rx="6"/>
+    <rect x="537" y="118" width="24" height="56" rx="6"/>
+    <rect x="575" y="128" width="24" height="52" rx="6"/>
+    <rect x="610" y="150" width="22" height="40" rx="6"/>
+    <!-- lower arch -->
+    <rect x="175" y="240" width="22" height="40" rx="6"/>
+    <rect x="210" y="248" width="24" height="52" rx="6"/>
+    <rect x="248" y="252" width="24" height="56" rx="6"/>
+    <rect x="286" y="248" width="24" height="54" rx="6"/>
+    <rect x="324" y="240" width="22" height="46" rx="6"/>
+    <rect x="355" y="232" width="20" height="40" rx="6"/>
+    <rect x="427" y="232" width="20" height="40" rx="6"/>
+    <rect x="458" y="240" width="22" height="46" rx="6"/>
+    <rect x="496" y="248" width="24" height="54" rx="6"/>
+    <rect x="534" y="252" width="24" height="56" rx="6"/>
+    <rect x="572" y="248" width="24" height="52" rx="6"/>
+    <rect x="607" y="240" width="22" height="40" rx="6"/>
+  </g>
+  <text x="400" y="380" fill="#6c6c70" font-family="sans-serif" font-size="20" text-anchor="middle">OPG — نمونه دمو</text>
+</svg>

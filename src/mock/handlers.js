@@ -470,7 +470,9 @@ on('get', 'v1/report/introduction-method(/advisor)?/statistics', () => ok({ data
 on('get', 'v1/report/advisor/efficiency', () => ok({ data: [] }))
 on('get', 'v1/report', () => ok({ data: R.reportWidgets }))
 on('get', 'v1/user/exist', () => ok({ data: false }))
-on('get', 'v1/user/diseases', () => ok({ data: [] }))
+// Medical-history checkbox catalog (TpdDisease) — the select unwraps data, so
+// the payload itself must be the array.
+on('get', 'v1/user/diseases', () => ok({ data: R.diseases }))
 on('get', 'v1/sitak/call', () => ok({ data: [] }))
 on('get', 'v1/user/conversations/channels', () => ok({ data: [] }))
 on('get', 'v1/coupon/generate-code', () =>
@@ -527,10 +529,56 @@ on('delete', String.raw`v1/financial/installment/(\d+)`, ({ match }) => {
   return ok({ data: { success: true } })
 })
 on('get', 'v1/file/status', () => ok({ data: [] }))
-// Logo/document upload (BaseUploader) — returns the array of stored files.
-on('post', 'v1/file/upload', () =>
-  ok({ data: [{ id: Math.floor(Date.now() / 1000), path: '/mock/uploads/logo.png' }] })
-)
+// BaseUploader (FormData: files[0][file], files[0][type], entity_id, entity_type).
+// Rows are persisted into the files collection so uploaded radiology images
+// survive reloads; small images are inlined as data URLs, larger payloads fall
+// back to the type's sample placeholder.
+const UPLOAD_PLACEHOLDERS = {
+  'user.opg': 'sample-opg.svg',
+  'user.cbct': 'sample-cbct.svg',
+}
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.addEventListener('load', () => resolve(reader.result))
+    reader.addEventListener('error', () => resolve(null))
+    reader.readAsDataURL(file)
+  })
+on('post', 'v1/file/upload', async ({ body }) => {
+  const created = []
+  if (typeof FormData !== 'undefined' && body instanceof FormData) {
+    const entries = {}
+    body.forEach((value, key) => {
+      entries[key] = value
+    })
+    const file = entries['files[0][file]']
+    const type = entries['files[0][type]'] || 'user.docs'
+    const entityId = Number(entries.entity_id) || null
+    if (file && typeof File !== 'undefined' && file instanceof File) {
+      const inlineable = /^image\//.test(file.type) && file.size <= 1_500_000
+      const dataUrl = inlineable ? await readFileAsDataUrl(file) : null
+      const path =
+        dataUrl ??
+        `${import.meta.env.BASE_URL}mocks/${UPLOAD_PLACEHOLDERS[type] ?? 'sample-opg.svg'}`
+      created.push({
+        id: nextId('files'),
+        user_id: entityId,
+        entity_type: entries.entity_type || 'user',
+        entity_id: entityId,
+        type,
+        name: file.name,
+        path,
+        status: { id: 15, slug: 'verified', title: 'تایید شده' },
+        created_at: nowStr(),
+      })
+    }
+  }
+  if (created.length > 0) {
+    coll('files').push(...created)
+    persist()
+  }
+  return ok({ data: created })
+})
 
 // ===== introduction methods (ads → روش‌های آشنایی) =====
 routes.push(...crudRoutes('v1/introduction-methods', 'introductionMethods'))
@@ -719,9 +767,25 @@ on('get', String.raw`v1/user/(\d+)/(show|mini)`, ({ match }) =>
   ok({ data: findById('users', match[1]) ?? {} })
 )
 on('get', String.raw`v1/user/(\d+)`, ({ match }) => ok({ data: findById('users', match[1]) ?? {} }))
-on('get', String.raw`v1/user/(\d+)/files(/[^/]+)?`, () => ok({ data: [] }))
+// 'medical' is the group type — the granular upload types all belong to it.
+const MEDICAL_FILE_TYPES = new Set(['user.opg', 'user.cbct', 'user.docs', 'medical'])
+on('get', String.raw`v1/user/(\d+)/files(/[^/]+)?`, ({ match }) => {
+  const type = match[2] ? decodeURIComponent(match[2].slice(1)) : null
+  const items = coll('files').filter((file) => {
+    if (String(file.user_id) !== String(match[1])) return false
+    if (!type || type === 'medical') return MEDICAL_FILE_TYPES.has(file.type)
+    return file.type === type
+  })
+  return ok({ data: { items } })
+})
 on('get', String.raw`v1/user/(\d+)/medical-info`, ({ match }) =>
-  ok({ data: findById('users', match[1])?.medical_info ?? {} })
+  ok({
+    data: findById('users', match[1])?.medical_info ?? {
+      diseases: [],
+      consumed_medications_amount: null,
+      tobacco_alcohol_use: null,
+    },
+  })
 )
 on('put', String.raw`v1/user/(\d+)/medical-info`, ({ match, body }) => {
   const user = findById('users', match[1])
@@ -1360,7 +1424,26 @@ on('delete', String.raw`v2/treatment-plan/(\d+)/perform/items/(\d+)`, ({ match }
   return ok({ data: { success: true }, message: 'شرح درمان با موفقیت حذف شد' })
 })
 on('post', String.raw`v2/treatment-plan/(\d+)/credit`, () => ok({ data: { success: true } }))
-on('get', String.raw`v2/treatment-plan/(\d+)/credit-total`, () => ok({ data: { total: 0 } }))
+// Full financial summary — UserTpCard/FinancialDetailsDialog read credit
+// (کیف پول), balance (negative = بدهی) and performedServesPrice off it.
+on('get', String.raw`v2/treatment-plan/(\d+)/credit-total`, ({ match }) => {
+  const plan = findById('treatmentPlans', match[1])
+  const performedTotal = coll('performedServes')
+    .filter((row) => String(row.treatment_plan_id) === String(match[1]))
+    .reduce((sum, row) => sum + (Number(row.price) || 0), 0)
+  const total = Number(plan?.total_price) || 0
+  const prepay = Number(plan?.prepay) || 0
+  return ok({
+    data: {
+      total,
+      prepay,
+      performedServesPrice: performedTotal,
+      credit: Math.max(0, prepay - performedTotal),
+      balance: Math.min(0, prepay - performedTotal),
+      discount: { fixed: 0, percent: 0 },
+    },
+  })
+})
 on('get', 'v2/treatment-plan/[^/]+/[^/]+/print', () => ok({ data: {} }))
 on('get', String.raw`v2/treatment-plan/(\d+)/warranties`, () => ok({ data: [] }))
 on('get', String.raw`v2/user/(\d+)/warranties`, () => ok({ data: [] }))

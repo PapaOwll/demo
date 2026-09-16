@@ -2,7 +2,7 @@
 // Field names mirror the real API snapshots exactly; volume kept minimal.
 
 // Rooms + roles seeds live with the other static clinic reference data.
-import { serves as referenceServes, doctors } from './reference'
+import { serves as referenceServes, doctors, diseases } from './reference'
 
 export { rooms, roles } from './reference'
 
@@ -52,14 +52,31 @@ const baseUser = (u, extra = {}) => ({
   ...extra,
 })
 
+// Medical history per user — every field of the GET medical-info contract is
+// present (diseases array, medications, tobacco/alcohol) so no consumer reads
+// an undefined layer.
+const medicalInfo = (diseaseIds, medications, tobacco) => ({
+  diseases: diseases.filter((d) => diseaseIds.includes(d.id)),
+  consumed_medications_amount: medications,
+  tobacco_alcohol_use: tobacco,
+})
+
 export const users = [
-  baseUser(testUsers[0], { has_treatment_plan: true, role: { id: 2, fa_title: 'مشاور' } }),
+  baseUser(testUsers[0], {
+    has_treatment_plan: true,
+    role: { id: 2, fa_title: 'مشاور' },
+    medical_info: medicalInfo([1, 2], 'متفورمین ۵۰۰ — روزی یک قرص', 'سیگار گاه‌به‌گاه'),
+  }),
   baseUser(testUsers[1], {
     last_status: { id: 60, title: 'نوبت داده شد' },
     role: { id: 2, fa_title: 'مشاور' },
+    medical_info: medicalInfo([4], 'قرص آلرژی فصلی', 'ندارد'),
   }),
   // role id 6 (کاربر عادی) — impersonation intentionally hidden for this one
-  baseUser(testUsers[2], { is_passenger: true }),
+  baseUser(testUsers[2], {
+    is_passenger: true,
+    medical_info: medicalInfo([], null, 'ندارد'),
+  }),
 ]
 
 export const owners = testUsers.map((u, i) => ({
@@ -263,6 +280,9 @@ const treatmentPlan = (id, u, serveId, price, teeth, extra = {}) => {
         questions: tpQuestionsFromReference(serveId),
       },
     ],
+    // FinancialDetailsDialog reads these directly off the plan row.
+    prepayment: Math.round(price / 6),
+    prepayment_percent: 20,
     created_at: '2026-09-05 10:00:00',
     branch,
     ...extra,
@@ -390,4 +410,52 @@ export const transactions = [
     created_at: '2026-09-06 12:00:00',
     description: 'پیش پرداخت',
   },
+]
+
+// Radiology/medical documents (v1/user/{id}/files/{type}). Status id 15 /
+// slug 'verified' is what the TpDescription card filters on; the mock
+// placeholders under /mocks keep the image preview modal renderable.
+const verifiedStatus = { id: 15, slug: 'verified', title: 'تایید شده' }
+const pendingStatus = { id: 14, slug: 'pending', title: 'در انتظار تایید' }
+
+const radFile = (id, userId, type, name, fileName, status, createdAt) => ({
+  id,
+  user_id: userId,
+  entity_type: 'user',
+  entity_id: userId,
+  type,
+  name,
+  path: `${import.meta.env.BASE_URL}mocks/${fileName}`,
+  status,
+  created_at: createdAt,
+})
+
+export const files = [
+  radFile(
+    3001,
+    1,
+    'user.opg',
+    'OPG-کل-فک.jpg',
+    'sample-opg.svg',
+    verifiedStatus,
+    '2026-08-20 10:30:00'
+  ),
+  radFile(
+    3002,
+    1,
+    'user.cbct',
+    'CBCT-ناحیه-46.jpg',
+    'sample-cbct.svg',
+    verifiedStatus,
+    '2026-09-02 14:10:00'
+  ),
+  radFile(
+    3003,
+    2,
+    'user.opg',
+    'OPG-اولیه.jpg',
+    'sample-opg.svg',
+    pendingStatus,
+    '2026-09-10 09:00:00'
+  ),
 ]

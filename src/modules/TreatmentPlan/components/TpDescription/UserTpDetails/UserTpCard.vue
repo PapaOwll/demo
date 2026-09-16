@@ -338,7 +338,7 @@ const { data: diseaseInfo, isLoading: isLoadingdisease } = useGetMedicalInfoQuer
   enabled: () => userDiseaseEnabled.value,
 })
 
-const hasDisease = computed(() => diseaseInfo.value?.diseases.length > 0)
+const hasDisease = computed(() => diseaseInfo.value?.diseases?.length > 0)
 
 const currentTreatmentPlanId = computed(() => {
   const plans = sortedTreatmentPlans.value
