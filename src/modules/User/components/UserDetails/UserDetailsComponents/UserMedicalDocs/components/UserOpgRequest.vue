@@ -120,7 +120,7 @@ const {
   hasNextPage,
 } = useGetUserOpgRequestInfinityQuery(userId.value, {
   enabled,
-  ...(ENABLE_USER_DETAIL_MOCKS ? { queryFn: () => mockGetOpgRequests() } : {}),
+  ...(ENABLE_USER_DETAIL_MOCKS ? { queryFn: () => mockGetOpgRequests(userId.value) } : {}),
 })
 
 const requests = computed(

@@ -123,18 +123,21 @@ const BASE_OPG_REQUESTS = [
   },
 ]
 
-export const mockGetOpgRequests = async () => {
+export const mockGetOpgRequests = async (userId) => {
   await mockDelay(450)
   // merge prescriptions submitted through the UserPrescription dialog (imaging
-  // + drug kinds) so newly registered requests show up on the OPG timeline
-  const submitted = coll('prescriptions').map((p) => ({
-    id: p.id,
-    registrationDate: p.registrationDate,
-    expireDate: p.expireDate,
-    trackingCode: p.trackingCode,
-    doctorName: p.doctorName,
-    services: p.services,
-  }))
+  // + drug kinds) for THIS user so newly registered requests show up on the
+  // OPG timeline without leaking other patients' prescriptions
+  const submitted = coll('prescriptions')
+    .filter((p) => !userId || String(p.user_id) === String(userId))
+    .map((p) => ({
+      id: p.id,
+      registrationDate: p.registrationDate,
+      expireDate: p.expireDate,
+      trackingCode: p.trackingCode,
+      doctorName: p.doctorName,
+      services: p.services,
+    }))
   return {
     data: [...submitted, ...BASE_OPG_REQUESTS],
   }
