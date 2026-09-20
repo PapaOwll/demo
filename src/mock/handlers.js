@@ -263,11 +263,34 @@ on('post', 'v1/(clinic|beauty)/branches', ({ body }) => {
   persist()
   return ok({ data: item, message: 'شعبه با موفقیت ثبت شد' })
 })
+// Snapshot for the branch status history drawer (AW-163) — snaked keys
+// camelize on the response; `data` rides as a JSON string that the
+// use-branch-status composable decodes per-subkey (phone/address/location).
+const branchHistorySnapshot = (branch) => ({
+  status: branch?.status?.id ?? null,
+  name: branch?.name ?? null,
+  contract_date: branch?.contract_date ?? null,
+  activation_date: branch?.activation_date ?? null,
+  data: JSON.stringify(branch?.data ?? {}),
+})
 on('put', String.raw`v1/(clinic|beauty)/branches/(\d+)`, ({ match, body }) => {
   const branch = findById('branches', match[2])
   if (branch) {
+    const oldValues = branchHistorySnapshot(branch)
     Object.assign(branch, body)
     if (body?.status_id) Object.assign(branch, { status: { id: body.status_id } })
+    const newValues = branchHistorySnapshot(branch)
+    // Audit real edits only — no-op saves shouldn't pollute the history drawer.
+    if (JSON.stringify(oldValues) !== JSON.stringify(newValues)) {
+      coll('branchStatusHistory').unshift({
+        id: nextId('branchStatusHistory'),
+        branch_id: Number(match[2]),
+        user: { first_name: 'نیلوفر', name: 'احمدی' },
+        created_at: nowStr(),
+        old_values: oldValues,
+        new_values: newValues,
+      })
+    }
   }
   persist()
   return ok({ data: branch ?? {}, message: 'شعبه با موفقیت ویرایش شد' })
@@ -276,7 +299,13 @@ on('delete', String.raw`v1/(clinic|beauty)/branches/(\d+)`, ({ match }) => {
   removeById('branches', match[2])
   return ok({ data: { success: true }, message: 'شعبه با موفقیت حذف شد' })
 })
-on('get', String.raw`v1/(clinic|beauty)/branches/(\d+)/history`, () => ok({ data: { items: [] } }))
+on('get', String.raw`v1/(clinic|beauty)/branches/(\d+)/history`, ({ match }) =>
+  ok({
+    data: {
+      items: coll('branchStatusHistory').filter((h) => String(h.branch_id) === String(match[2])),
+    },
+  })
+)
 on('put', String.raw`v1/(clinic|beauty)/branches/(\d+)/status`, () =>
   ok({ data: { success: true }, message: 'وضعیت شعبه با موفقیت تغییر کرد' })
 )
@@ -540,8 +569,11 @@ on('get', 'v1/file/status', () => ok({ data: [] }))
 // Rows are persisted into the files collection so uploaded radiology images
 // survive reloads; small images are inlined as data URLs (capped low — the
 // whole db shares one localStorage key), larger payloads fall back to the
-// type's sample placeholder.
+// type's sample placeholder. Booking voice uploads (AW-152) are inlined too
+// so recorded sessions keep playing across reloads — audio is granted a
+// larger cap than images.
 const INLINE_IMAGE_MAX_BYTES = 300_000
+const INLINE_AUDIO_MAX_BYTES = 600_000
 const readFileAsDataUrl = (file) =>
   new Promise((resolve) => {
     const reader = new FileReader()
@@ -559,12 +591,16 @@ on('post', 'v1/file/upload', async ({ body }) => {
     const file = entries['files[0][file]']
     const type = entries['files[0][type]'] || 'user.docs'
     const entityId = Number(entries.entity_id) || null
-    if (entityId === null) {
+    // Booking voices are attached by file id via v2/booking/{id}/voice right
+    // after upload, so a missing entity_id is expected for that flow.
+    if (entityId === null && type !== 'booking.voice') {
       // eslint-disable-next-line no-console
       console.warn('[mock] file/upload without entity_id — row will be orphaned')
     }
     if (file && typeof File !== 'undefined' && file instanceof File) {
-      const inlineable = /^image\//.test(file.type) && file.size <= INLINE_IMAGE_MAX_BYTES
+      const inlineable =
+        (/^image\//.test(file.type) && file.size <= INLINE_IMAGE_MAX_BYTES) ||
+        (/^audio\//.test(file.type) && file.size <= INLINE_AUDIO_MAX_BYTES)
       const dataUrl = inlineable ? await readFileAsDataUrl(file) : null
       created.push({
         id: nextId('files'),
@@ -1106,6 +1142,48 @@ on('put', String.raw`v1/booking/(\d+)`, ({ match, body }) => {
 on('delete', String.raw`v1/booking/(\d+)`, ({ match }) => {
   removeById('bookings', match[1])
   return ok({ data: { success: true } })
+})
+// ===== booking voices (AW-152 — TpDescription recorder) =====
+// Attach resolves uploaded file ids onto the booking row so the session card
+// voices tab (fed by GET v2/booking/{id}/serves) reflects them across reloads.
+on('post', String.raw`v2/booking/(\d+)/voice`, ({ match, body }) => {
+  const booking = findById('bookings', match[1])
+  if (!booking) return { status: 404, body: { message: 'نوبت یافت نشد' } }
+  booking.voices = Array.isArray(booking.voices) ? booking.voices : []
+  ;(body?.voices || []).forEach((v) => {
+    const file = findById('files', v?.id)
+    if (!file || booking.voices.some((existing) => String(existing.id) === String(file.id))) return
+    booking.voices.push({
+      id: file.id,
+      path: file.path,
+      name: file.name,
+      duration: v?.duration ?? 0,
+      type: v?.type ?? file.type,
+      created_at: file.created_at || nowStr(),
+    })
+  })
+  persist()
+  return ok({ data: { voices: booking.voices }, message: 'ذخیره سازی صدا با موفقیت انجام شد.' })
+})
+on('get', String.raw`v2/booking/(\d+)/serves`, ({ match }) => {
+  const booking = findById('bookings', match[1])
+  return ok({ data: { voices: booking?.voices ?? [] } })
+})
+// AW-158 — header warning chip: patients with an active treatment plan but no
+// cheque on file. AppHeader reads data.count (query select unwraps data?.data).
+on('get', 'v1/booking/patients-without-cheque-count', () => {
+  const withCheque = new Set(coll('cheques').map((c) => String(c.user_id)))
+  const activePatients = new Set(
+    coll('treatmentPlans')
+      .filter((tp) => tp.is_active !== false && !tp.is_draft)
+      .map((tp) => String(tp.user?.id ?? tp.user_id))
+      .filter(Boolean)
+  )
+  let count = 0
+  activePatients.forEach((id) => {
+    if (!withCheque.has(id)) count += 1
+  })
+  return ok({ data: { count } })
 })
 
 // ===== tasks / contacts (generic CRUD) =====

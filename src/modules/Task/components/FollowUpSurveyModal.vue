@@ -14,7 +14,27 @@
       <QSpinnerTail color="primary" size="40" />
     </QInnerLoading>
 
-    <QForm v-if="!isQuestionsLoading" class="follow-up-survey">
+    <div v-else-if="isQuestionsError" class="follow-up-survey__state">
+      <QImg :src="noData" loading="lazy" width="250px" />
+      <Typography variant="body" size="3" :color="isSurveyNotFound ? 'grey' : 'red'">
+        {{ surveyErrorMessage }}
+      </Typography>
+      <Button
+        v-if="isRetryableSurveyError"
+        variant="outline"
+        color="light-blue"
+        type="button"
+        text="تلاش مجدد"
+        :is-loading="isQuestionsFetching"
+        @click="refetchQuestions"
+      />
+    </div>
+
+    <div v-else-if="questions.length === 0" class="follow-up-survey__state">
+      <Typography variant="body" size="3" color="grey">نظرسنجی برای این وظیفه یافت نشد.</Typography>
+    </div>
+
+    <QForm v-else class="follow-up-survey">
       <div v-for="question in questions" :key="question.key" class="follow-up-survey__question">
         <Typography variant="body" size="2">
           {{ question.title }}
@@ -103,6 +123,7 @@ import Button from '@/base/Button'
 import Radio from '@/base/Radio'
 import TextField from '@/base/TextField'
 import Typography from '@/base/Typography'
+import noData from '@/assets/images/noData.svg'
 
 const emits = defineEmits(['close', 'submitted'])
 const props = defineProps({
@@ -115,8 +136,37 @@ const queryClient = useQueryClient()
 
 const taskId = computed(() => task.value?.id ?? undefined)
 
-const { data: questionsData, isLoading: isQuestionsLoading } = useGetFollowUpsSurvey(taskId, {
+const {
+  data: questionsData,
+  isLoading: isQuestionsLoading,
+  isFetching: isQuestionsFetching,
+  isError: isQuestionsError,
+  error: questionsError,
+  refetch: refetchQuestions,
+} = useGetFollowUpsSurvey(taskId, {
   enabled: () => visible.value && !!taskId.value,
+  // A 404 is definitive — the survey does not exist for this task — so
+  // auto-retrying it (like a transient 5xx/network error) is pointless.
+  retry: (failureCount, error) => error?.response?.status !== 404 && failureCount < 1,
+})
+
+// 404 = survey not registered for this task (not a transient failure).
+const isSurveyNotFound = computed(() => questionsError.value?.response?.status === 404)
+
+const isRetryableSurveyError = computed(() => isQuestionsError && !isSurveyNotFound.value)
+
+const surveyErrorMessage = computed(() => {
+  if (isSurveyNotFound.value) {
+    return 'نظرسنجی برای این وظیفه ثبت نشده است.'
+  }
+  if (questionsError.value?.code === 'ECONNABORTED') {
+    return 'زمان دریافت اطلاعات نظرسنجی به پایان رسید. لطفاً دوباره تلاش کنید.'
+  }
+  return (
+    questionsError.value?.response?.data?.message ||
+    questionsError.value?.message ||
+    'خطا در دریافت اطلاعات نظرسنجی. لطفاً دوباره تلاش کنید.'
+  )
 })
 
 const questionTitle = computed(() => questionsData.value?.kindTitle || 'نظر سنجی بیمار')
@@ -291,6 +341,17 @@ const submitSurvey = async () => {
     gap: $spacing-md;
     border-bottom: 1px solid $default-border;
     padding-bottom: $spacing-sm;
+  }
+
+  &__state {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-md;
+    padding: $spacing-xl $spacing-md;
+    text-align: center;
   }
 }
 </style>

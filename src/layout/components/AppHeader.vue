@@ -7,6 +7,16 @@
         <Typography variant="body" size="2" color="white">به روز رسانی کن</Typography>
       </QBtn>
     </div>
+    <div v-if="chequesCount > 0" class="warning-bar">
+      <IconAlertTriangle color="yellow" />
+      <Typography variant="body" size="2" color="white">
+        شما
+        <span class="text-yellow text-h5">
+          {{ chequesCount }}
+        </span>
+        بیمار بدون ثبت چک دارید. لطفاً مدارک مالی آنها را تکمیل کنید.
+      </Typography>
+    </div>
     <QToolbar class="layout__header-toolbar">
       <QToolbarTitle>
         <div class="flex justify-between items-center full-width">
@@ -221,6 +231,7 @@ import {
   IconBell,
   IconUser,
   IconSearch,
+  IconAlertTriangle,
 } from '@tabler/icons-vue'
 import Typography from '@/base/Typography'
 import { computed, ref } from 'vue'
@@ -229,6 +240,7 @@ import { storeToRefs } from 'pinia'
 import { logout } from '@/utils/auth'
 import { useUserStore } from '@/store/user'
 import { useGetHeaderWidgetsQuery } from '@/layout/query'
+import { useGetPatientsWithoutChequeCountQuery } from '@/modules/Booking/query'
 import { mapWidgetData } from '@/utils/header-widgets'
 import { useUserSearch } from '@/composables/use-user-search'
 import { getThemeSetting } from '@/utils/theme-setting'
@@ -261,11 +273,9 @@ const queryClient = useQueryClient()
 
 const swStore = useServiceWorkerStore()
 
-// state
 const selectedUser = ref(null)
 const searchInputValue = ref('')
 
-// computed
 const isUpdateAvailable = computed(() => swStore.isUpdateAvailable)
 const filters = computed(() => {
   return {
@@ -280,11 +290,14 @@ const logo = computed(
     getThemeSetting()?.logo || 'https://api.cdn.sitracrm.ir/franchise/_logo/default/app-icon.png'
 )
 
-// widgets
 const { data: widgets } = useGetHeaderWidgetsQuery(filters, { enabled: true })
+
+const { data: patientsWithoutCheque } = useGetPatientsWithoutChequeCountQuery()
+
+const chequesCount = computed(() => patientsWithoutCheque.value?.count || 0)
+
 const widgetData = computed(() => mapWidgetData(widgets.value))
 
-// Create icon components for widgets
 const widgetIconComponents = computed(() => {
   const icons = {}
   const data = widgetData.value
@@ -642,5 +655,17 @@ const updateProject = () => {
     rgba(2, 39, 89, 1) 79%,
     rgba(2, 70, 89, 1) 97%
   );
+}
+
+.warning-bar {
+  min-height: 48px;
+  color: white;
+  font-size: 16px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(90deg, rgb(244, 60, 2) 0%, rgb(221, 6, 6) 100%);
 }
 </style>

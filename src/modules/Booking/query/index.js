@@ -10,6 +10,7 @@ import {
   apiGetBookingCalendar,
   apiGetBookingUsers,
   apiGetCoordinateTotalCount,
+  apiGetPatientsWithoutChequeCount,
   apiGetOnlineSessions,
   apiGetPresentVisitSessionTimes,
   apiGetVisit,
@@ -213,5 +214,14 @@ export const useVisitQuery = (visitId, placeholder, options = {}) =>
     select: (data) => data?.data ?? data,
     enabled: computed(() => !!visitId.value),
     placeholderData: () => placeholder?.value ?? undefined,
+    ...options,
+  })
+
+export const useGetPatientsWithoutChequeCountQuery = (options = {}) =>
+  useQuery({
+    queryKey: ['booking', 'patients-without-cheque-count'],
+    queryFn: ({ signal }) => apiGetPatientsWithoutChequeCount({ signal }),
+    select: (data) => data?.data ?? 0,
+    refetchInterval: 60_000,
     ...options,
   })

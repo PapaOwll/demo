@@ -121,6 +121,51 @@
       </QCardSection>
     </QCard>
   </div>
+  <AudioRecorder
+    :recordable="!!selectedBookingId"
+    :voices="[]"
+    :show-players="false"
+    :external-loading="isVoiceUploadPending || attachVoicePending"
+    :recording-reminders="recordingReminders"
+    :recovery="bookingVoiceRecovery"
+    @save="onSaveVoiceFile"
+    @recording-change="onRecordingChange"
+  >
+    <template #upload-status>
+      <div v-if="isUploadingVoice" class="tpd-voice-upload-status">
+        <div class="tpd-voice-upload-status__text">
+          <QSpinner color="primary" size="1.2em" />
+          <Typography variant="body" size="4" color="grey">
+            در حال بارگذاری صدای ضبط شده...
+          </Typography>
+        </div>
+        <QLinearProgress
+          :value="voiceUploadProgress / 100"
+          color="primary"
+          class="tpd-voice-upload-status__progress"
+        />
+        <Typography variant="caption" color="grey">{{ voiceUploadProgress }}%</Typography>
+      </div>
+
+      <div
+        v-if="voiceUploadCompleted"
+        class="tpd-voice-upload-status tpd-voice-upload-status--success"
+      >
+        <QIcon name="check_circle" color="positive" size="1.2em" />
+        <Typography variant="body" size="4" color="green">بارگذاری با موفقیت انجام شد</Typography>
+      </div>
+
+      <div
+        v-if="!selectedBookingId"
+        class="tpd-voice-upload-status tpd-voice-upload-status--warning"
+      >
+        <QIcon name="info" color="warning" size="1.2em" />
+        <Typography variant="body" size="4" color="grey">
+          برای ذخیره صدای ضبط‌شده ابتدا یک نوبت را انتخاب کنید
+        </Typography>
+      </div>
+    </template>
+  </AudioRecorder>
   <TpAddDescriptionDialog
     :visible="isShowModal"
     :tp-id="tpId"
@@ -140,7 +185,15 @@
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Notif, confirmDialog } from '@/data/services/notification-service'
 import { IconArrowRight, IconDental, IconRefresh, IconUser } from '@tabler/icons-vue'
@@ -148,22 +201,32 @@ import Typography from '@/base/Typography'
 import Button from '@/base/Button'
 import useDisclosure from '@/composables/use-disclosure'
 import {
+  useAttachBookingVoiceMutation,
   useDeleteTpDescriptionMutation,
   useGetTreatmentPlanByIdQuery,
   useTpDescriptionQuery,
   useTreatmentPlanBookingsQuery,
 } from '@/modules/TreatmentPlan/query'
-import { useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import {
   extractSelectedTeethFromItem,
   transformApiResponseToTableFormat,
 } from '@/modules/TreatmentPlan/utils/tp-description-transformers'
 import { teethMapping } from '@/modules/TreatmentPlan/constants/teeth'
-import { convertToJalali, formatDate } from '@/utils/date-utils'
+import { convertToJalali, convertToJalaliWithTime, formatDate } from '@/utils/date-utils'
 import { getPerms } from '@/utils/get-perms'
 import UserTpCard from '@/modules/TreatmentPlan/components/TpDescription/UserTpDetails/UserTpCard'
 import SelectField from '@/base/SelectField'
 import TreatmentSessionCard from '@/modules/TreatmentPlan/components/TpDescription/TreatmentSessionCard'
+import AudioRecorder from '@/components/AudioRecorder'
+import { request } from '@/data/services'
+import { handleError } from '@/utils/error-handler'
+import {
+  getRecordingRecovery,
+  clearRecordingRecovery,
+  buildRecoveredFilePayload,
+} from '@/utils/recording-recovery'
+import { useRecordingReminders } from '@/modules/TreatmentPlan/composables/use-recording-reminders'
 
 const TpAddDescriptionDialog = defineAsyncComponent(
   () => import('../components/TpDescription/TpAddDescriptionDialog')
@@ -196,7 +259,165 @@ watch(selectedBookingId, (val) => {
 const isBookingDropdownOpen = ref(false)
 const expandedRows = ref([])
 
+const recordingReminders = useRecordingReminders()
+
+// --- Voice recording & upload state ---
+const voiceUploadProgress = ref(0)
+const isUploadingVoice = ref(false)
+const voiceUploadCompleted = ref(false)
+const isVoiceRecording = ref(false)
+
+const onRecordingChange = (recording) => {
+  isVoiceRecording.value = recording
+}
+
+const shouldBlockClose = computed(() => isUploadingVoice.value || isVoiceRecording.value)
+
+const handleVoiceBeforeUnload = (e) => {
+  if (shouldBlockClose.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+watch(shouldBlockClose, (newValue) => {
+  if (newValue) {
+    window.addEventListener('beforeunload', handleVoiceBeforeUnload)
+  } else {
+    window.removeEventListener('beforeunload', handleVoiceBeforeUnload)
+  }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleVoiceBeforeUnload)
+})
+
+const apiUploadVoiceFile = (formData, onUploadProgress) =>
+  request.post('v1/file/upload', formData, {
+    timeout: 120_000,
+    onUploadProgress: (progressEvent) => {
+      if (progressEvent.total) {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+        onUploadProgress(percentCompleted)
+      }
+    },
+  })
+
+const useVoiceFileUploadMutation = () =>
+  useMutation({
+    mutationFn: ({ formData, onUploadProgress }) => apiUploadVoiceFile(formData, onUploadProgress),
+    onError: (err) => {
+      handleError(err)
+      isUploadingVoice.value = false
+      voiceUploadProgress.value = 0
+    },
+  })
+
+const { mutate: mutateUploadVoice, isPending: isVoiceUploadPending } = useVoiceFileUploadMutation()
+const { mutate: attachBookingVoice, isPending: attachVoicePending } = useAttachBookingVoiceMutation(
+  {
+    onSuccess: (res) => {
+      Notif.success(res?.message || 'ذخیره سازی صدا با موفقیت انجام شد.')
+      if (selectedBookingId.value) {
+        queryClient.invalidateQueries({
+          queryKey: ['booking-voices', selectedBookingId.value],
+        })
+      }
+    },
+  }
+)
+
+const onSaveVoiceFile = (fileData) => {
+  if (!fileData || !fileData.file) return
+  if (!selectedBookingId.value) {
+    Notif.warning('برای ذخیره صدای ضبط‌شده ابتدا یک نوبت را انتخاب کنید')
+    return
+  }
+
+  voiceUploadProgress.value = 0
+  isUploadingVoice.value = true
+  voiceUploadCompleted.value = false
+
+  const formData = new FormData()
+  formData.append('files[0][file]', fileData.file)
+  formData.append('files[0][type]', 'booking.voice')
+
+  mutateUploadVoice(
+    {
+      formData,
+      onUploadProgress: (percent) => {
+        voiceUploadProgress.value = percent
+      },
+    },
+    {
+      onSuccess: (res) => {
+        isUploadingVoice.value = false
+        voiceUploadCompleted.value = true
+        setTimeout(() => {
+          voiceUploadCompleted.value = false
+        }, 3000)
+
+        Notif.success('فایل صوتی با موفقیت آپلود شد.')
+
+        attachBookingVoice({
+          bookingId: selectedBookingId.value,
+          voices: [
+            {
+              id: res.data[0]?.id,
+              type: fileData?.uploadType,
+            },
+          ],
+        })
+      },
+      onError: () => {
+        isUploadingVoice.value = false
+        voiceUploadProgress.value = 0
+      },
+    }
+  )
+}
+
+// Crash-recovery key for booking voice recordings (per patient). The
+// AudioRecorder freezes the config at recording start, so a mid-recording
+// booking change never corrupts the persisted snapshot.
 const userId = computed(() => data.value?.user?.id)
+
+const bookingVoiceRecovery = computed(() => {
+  if (!userId.value) return null
+  return {
+    key: `booking-voice-${userId.value}`,
+    context: { bookingId: selectedBookingId.value },
+  }
+})
+
+// On load, offer to upload a recording that was interrupted by a tab close /
+// browser crash / shutdown (persisted in IndexedDB by AudioRecorder).
+const recoverInterruptedRecording = async () => {
+  if (!userId.value) return
+
+  const key = `booking-voice-${userId.value}`
+  const recovered = await getRecordingRecovery(key)
+  await clearRecordingRecovery(key)
+  if (!recovered?.blob || recovered.blob.size === 0) return
+
+  const savedAtJalali = convertToJalaliWithTime(new Date(recovered.savedAt || Date.now()))
+  confirmDialog(
+    'ذخیره ضبط ناتمام',
+    `ضبط صوتی ناتمامی از این بیمار پیدا شد (${savedAtJalali}). ذخیره شود؟`,
+    () => {
+      onSaveVoiceFile(buildRecoveredFilePayload(recovered))
+    }
+  )
+}
+
+watch(
+  userId,
+  (id) => {
+    if (id) recoverInterruptedRecording()
+  },
+  { immediate: true }
+)
+
 const patientName = computed(() =>
   `${data.value?.user?.firstName || ''} ${data.value?.user?.name || ''}`.trim()
 )
@@ -231,6 +452,16 @@ const bookingOptions = computed(() => {
     label: convertToJalali(item.bookingAt || item.booking_at, ' jdddd - jYYYY/jMM/jDD') || item.id,
   }))
 })
+
+watch(
+  bookingOptions,
+  (options) => {
+    if (!selectedBookingId.value && options?.length) {
+      selectedBookingId.value = options[0].id
+    }
+  },
+  { immediate: true }
+)
 
 watch(
   treatmentPlanData,
@@ -602,6 +833,39 @@ onMounted(() => {
     justify-content: flex-end;
     padding: $spacing-md $spacing-lg;
     border-top: 1px solid $grey-2;
+  }
+}
+
+.tpd-voice-upload-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background-color: $grey-1;
+  border-radius: 8px;
+  border: 1px solid $grey-3;
+
+  &__text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__progress {
+    border-radius: 4px;
+  }
+
+  &--success {
+    flex-direction: row;
+    border-color: $positive;
+    background-color: rgba($positive, 0.05);
+  }
+
+  &--warning {
+    flex-direction: row;
+    border-color: $warning;
+    background-color: rgba($warning, 0.05);
   }
 }
 </style>

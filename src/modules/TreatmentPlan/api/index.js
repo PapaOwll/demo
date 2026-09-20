@@ -120,3 +120,8 @@ export const apiCalculateCouponCode = (data) =>
   request.post('v1/coupon/calculate', data, { hadSnakize: true })
 
 export const apiGetTreatmentPlanBookings = (params) => request.get('v1/booking', { params })
+
+export const apiAttachBookingVoice = (bookingId, data) =>
+  request.post(`v2/booking/${bookingId}/voice`, data, { hadSnakize: true })
+
+export const apiGetBookingServes = (bookingId) => request.get(`v2/booking/${bookingId}/serves`)

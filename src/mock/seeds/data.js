@@ -71,6 +71,8 @@ export const users = [
   baseUser(testUsers[0], {
     has_treatment_plan: true,
     role: { id: 2, fa_title: 'مشاور' },
+    // REVN-9: implant base-count dropdown preselect
+    implant_needed_teeth: 4,
     medical_info: medicalInfo([1, 2], 'متفورمین ۵۰۰ — روزی یک قرص', 'سیگار گاه‌به‌گاه'),
   }),
   baseUser(testUsers[1], {
@@ -126,6 +128,45 @@ const tpRef = (id) => ({
   public_link: `/tp/demo-tp-${id}`,
 })
 
+// Tiny generated WAV (8 kHz, 8-bit mono chime) inlined as a data URL so the
+// seeded booking voices play offline — no network, no blob URLs, and the
+// payload survives the localStorage JSON round-trip (~13 KB base64 per voice).
+const buildVoiceDataUrl = (freq = 440, seconds = 1.2) => {
+  const rate = 8000
+  const samples = Math.floor(rate * seconds)
+  const buffer = new ArrayBuffer(44 + samples)
+  const view = new DataView(buffer)
+  const writeStr = (offset, str) => {
+    for (let i = 0; i < str.length; i += 1) view.setUint8(offset + i, str.codePointAt(i))
+  }
+  writeStr(0, 'RIFF')
+  view.setUint32(4, 36 + samples, true)
+  writeStr(8, 'WAVE')
+  writeStr(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true) // PCM
+  view.setUint16(22, 1, true) // mono
+  view.setUint32(24, rate, true)
+  view.setUint32(28, rate, true)
+  view.setUint16(32, 1, true)
+  view.setUint16(34, 8, true) // bits per sample
+  writeStr(36, 'data')
+  view.setUint32(40, samples, true)
+  for (let i = 0; i < samples; i += 1) {
+    const t = i / rate
+    const envelope = Math.min(1, t * 8) * Math.exp(-t * 2.2)
+    const value = Math.sin(2 * Math.PI * freq * t) * envelope
+    view.setUint8(44 + i, Math.round(128 + value * 100))
+  }
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const CHUNK = 0x80_00
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK))
+  }
+  return `data:audio/wav;base64,${btoa(binary)}`
+}
+
 export const bookings = [
   bookingBase(101, testUsers[0], 1, '2026-09-10', '10:00'),
   bookingBase(102, testUsers[1], 1, '2026-09-11', '12:00'),
@@ -135,6 +176,25 @@ export const bookings = [
     // Booking 201 already has one seeded performed serve (see performedServes).
     performed_at: '2026-09-15 09:30:00',
     has_treatment_description: true,
+    // AW-152: seeded session voices (tab «فایل های صوتی») — playable data URLs.
+    voices: [
+      {
+        id: 9001,
+        path: buildVoiceDataUrl(440),
+        name: 'توضیحات جلسه اول.wav',
+        duration: 1200,
+        type: 'booking.voice',
+        created_at: '2026-09-15 09:45:00',
+      },
+      {
+        id: 9002,
+        path: buildVoiceDataUrl(330),
+        name: 'یادداشت پیگیری.wav',
+        duration: 1200,
+        type: 'booking.voice',
+        created_at: '2026-09-15 10:05:00',
+      },
+    ],
   },
   bookingBase(202, testUsers[1], 2, '2026-09-16', '11:00', tpRef(502)),
   bookingBase(203, testUsers[2], 2, '2026-09-17', '15:00', tpRef(503)),
@@ -545,4 +605,84 @@ export const files = [
   radFile(3001, 1, 'user.opg', 'OPG-کل-فک.jpg', FILE_STATUSES.verified, '2026-08-20 10:30:00'),
   radFile(3002, 1, 'user.cbct', 'CBCT-ناحیه-46.jpg', FILE_STATUSES.verified, '2026-09-02 14:10:00'),
   radFile(3003, 2, 'user.opg', 'OPG-اولیه.jpg', FILE_STATUSES.pending, '2026-09-10 09:00:00'),
+]
+
+// AW-158: one cheque for user 2 (active TP 502) — the header warning banner
+// counts the remaining active-TP patients (users 1 and 3 → count 2). Cheques
+// registered later via POST v1/user/{id}/cheques shrink the count on refresh.
+export const cheques = [
+  {
+    id: 6001,
+    user_id: 2,
+    amount: 20_000_000,
+    cheque_number: '845123',
+    cheque_type: 'PHYSICAL',
+    bank: { id: 1, title: 'بانک ملت' },
+    bank_branch_title: 'شعبه ونک',
+    due_date: '2026-12-01',
+    status: { id: 1, title: 'در جریان' },
+    created_at: '2026-09-10 09:00:00',
+  },
+]
+
+// AW-163: branch status history — old/new value snapshots per change. The
+// `data` field is a JSON string (phone/address/location) that the composable
+// decodes per sub-key; newest entry first so PUT-appended rows stay on top.
+export const branchStatusHistory = [
+  {
+    id: 2,
+    branch_id: 24,
+    user: { first_name: 'نیلوفر', name: 'احمدی' },
+    created_at: '2026-09-12 16:40:00',
+    old_values: {
+      status: 1,
+      name: 'شعبه سعادت‌آباد',
+      contract_date: '2024-03-01',
+      activation_date: '2024-04-01',
+      data: JSON.stringify({
+        phone: ['02112345678', '02188001234'],
+        address: 'تهران، سعادت‌آباد، میدان کاج',
+        location: { lat: 35.7834, lng: 51.3731 },
+      }),
+    },
+    new_values: {
+      status: 1,
+      name: 'شعبه سعادت‌آباد',
+      contract_date: '2025-03-01',
+      activation_date: '2024-04-01',
+      data: JSON.stringify({
+        phone: ['02112345678'],
+        address: 'تهران، سعادت‌آباد، میدان کاج',
+        location: { lat: 35.7834, lng: 51.3731 },
+      }),
+    },
+  },
+  {
+    id: 1,
+    branch_id: 24,
+    user: { first_name: 'زهرا', name: 'احمدی' },
+    created_at: '2026-09-05 10:15:00',
+    old_values: {
+      status: 2,
+      name: 'شعبه سعادت‌آباد',
+      contract_date: '2024-03-01',
+      activation_date: null,
+      data: JSON.stringify({
+        phone: ['02112345678'],
+        address: 'تهران، سعادت‌آباد',
+        location: '',
+      }),
+    },
+    new_values: {
+      status: 1,
+      name: 'شعبه سعادت‌آباد',
+      contract_date: '2024-03-01',
+      activation_date: '2024-04-01',
+      data: JSON.stringify({
+        phone: ['02112345678', '02188001234'],
+        address: 'تهران، سعادت‌آباد، میدان کاج',
+        location: { lat: 35.7834, lng: 51.3731 },
+      }),
+    },
+  },
 ]

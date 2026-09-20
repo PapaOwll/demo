@@ -64,7 +64,6 @@ import {
   getBaseCountAnswers,
   hasUnsetBaseCount,
 } from '../../constants/service-question-types'
-import { buildServeIndustryItems } from '../../utils/question-items-builder'
 import { useBranchTpPerform } from '../../composables/use-branch-tp-perform'
 
 const props = defineProps({
@@ -129,12 +128,10 @@ const submitPreTp = () => {
     return
   }
 
-  // Keep the manually selected base counts (pivot.unit) in the payload — same
-  // serve_industry_items shape the main v2/treatment-plan save uses — so units
-  // are never defaulted automatically after the draft is submitted.
-  const serveIndustryItems = draftQuestions
-    .flatMap((question) => buildServeIndustryItems(question))
-    .filter(Boolean)
+  const serveIndustryItems =
+    treatmentData?.value?.items?.flatMap(({ questions }) =>
+      questions?.flatMap((q) => q.items?.map((i) => i.id))
+    ) || []
 
   const serveIndustries =
     treatmentData?.value?.teeth

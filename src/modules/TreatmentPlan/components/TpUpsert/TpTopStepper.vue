@@ -120,8 +120,9 @@ const skeletonSteps = computed(() => [
 ])
 
 const goToEditTreatmentPlan = () => {
+  if (isNavigating.value) return
   isNavigating.value = true
-  router.push(`/treatment-plan/edit/${treatmentData?.value?.id}`)
+  window.location.href = router.resolve(`/treatment-plan/edit/${treatmentData?.value?.id}`).href
 }
 </script>
 

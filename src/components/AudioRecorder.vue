@@ -24,7 +24,7 @@
     </AudioRecordButton>
 
     <!-- Individual Audio Players -->
-    <div class="ar__players-section">
+    <div v-if="showPlayers" class="ar__players-section">
       <div class="ar__players-title">
         <Typography variant="heading" size="h5">فایل های صوتی جلسات</Typography>
       </div>
@@ -60,6 +60,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch, toRefs } from 'vue'
 import { handleError } from '@/utils/error-handler'
 import { Notif } from '@/data/services/notification-service'
+import { saveRecordingRecovery, clearRecordingRecovery } from '@/utils/recording-recovery'
 import Typography from '@/base/Typography'
 import AudioRecordButton from './audio/AudioRecordButton'
 import AudioFileUpload from './audio/AudioFileUpload'
@@ -111,6 +112,19 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+  showPlayers: {
+    type: Boolean,
+    default: true,
+  },
+  // Opt-in crash-recovery mode: { key: String, context: Object }.
+  // While recording, the partial audio is periodically persisted to IndexedDB
+  // under `key` (survives tab close / browser crash / OS shutdown). The
+  // consumer checks for a leftover recording on its next mount and re-uploads
+  // it. The config is frozen at recording start.
+  recovery: {
+    type: Object,
+    default: null,
+  },
 })
 
 const { externalLoading } = toRefs(props)
@@ -145,6 +159,11 @@ const fileUploadRef = ref(null)
 // Recording flags
 const shouldUploadAfterStop = ref(false)
 const isCanceling = ref(false)
+
+// Crash-recovery persistence state (frozen for the whole recording session)
+const RECOVERY_INTERVAL_MS = 3000
+let recoveryConfig = null
+let recoveryTimer = null
 
 // Animation frame IDs
 let elapsedRafId = null
@@ -449,6 +468,63 @@ const stopPitchDetection = () => {
   }
 }
 
+// --- Crash-recovery persistence ---
+
+const clearRecoveryTimer = () => {
+  if (recoveryTimer) {
+    clearInterval(recoveryTimer)
+    recoveryTimer = null
+  }
+}
+
+const persistRecoverySnapshot = () => {
+  if (!recoveryConfig || !isRecording.value || recordedChunks.value.length === 0) return
+
+  const mimeType = mediaRecorder.value?.mimeType || 'audio/webm'
+  const blob = new Blob(recordedChunks.value, { type: mimeType })
+  if (blob.size === 0) return
+
+  saveRecordingRecovery(recoveryConfig.key, {
+    blob,
+    mimeType,
+    context: recoveryConfig.context,
+  }).catch(() => {})
+}
+
+// Internet dropped mid-recording: the upload paths are dead until reconnect,
+// so make sure the partial audio is safely on disk right away — it will be
+// offered for recovery (or uploaded on stop) once the connection is back.
+const handleRecordingOffline = () => {
+  if (!isRecording.value) return
+  persistRecoverySnapshot()
+  Notif.warning(
+    'اینترنت قطع شد — ضبط ادامه دارد و تا این لحظه به‌صورت محلی نگهداری می‌شود و پس از اتصال مجدد قابل ذخیره است.'
+  )
+}
+
+const startRecoveryPersistence = () => {
+  if (!props.recovery?.key) return
+
+  // Freeze the config for the whole session so a mid-recording context
+  // change (e.g. selecting another booking) cannot corrupt the snapshot.
+  recoveryConfig = { key: props.recovery.key, context: props.recovery.context }
+  clearRecoveryTimer()
+  recoveryTimer = setInterval(persistRecoverySnapshot, RECOVERY_INTERVAL_MS)
+  window.addEventListener('pagehide', persistRecoverySnapshot)
+  window.addEventListener('offline', handleRecordingOffline)
+}
+
+const stopRecoveryPersistence = (shouldClear) => {
+  clearRecoveryTimer()
+  window.removeEventListener('pagehide', persistRecoverySnapshot)
+  window.removeEventListener('offline', handleRecordingOffline)
+  const key = recoveryConfig?.key
+  recoveryConfig = null
+  if (shouldClear && key) {
+    clearRecordingRecovery(key)
+  }
+}
+
 const handleRecordingStop = async () => {
   try {
     if (isCanceling.value) {
@@ -500,6 +576,9 @@ const handleRecordingStop = async () => {
   } catch (error) {
     handleError(error)
   } finally {
+    // The recording ended in-page (saved or canceled) — the recovery
+    // snapshot is no longer needed.
+    stopRecoveryPersistence(true)
     cleanupStream()
     isProcessing.value = false
     isCanceling.value = false
@@ -532,6 +611,7 @@ const startRecording = async () => {
     isRecording.value = true
     startTimestamp.value = performance.now()
     startElapsedTimer()
+    startRecoveryPersistence()
   } catch (error) {
     if (error.name === 'NotAllowedError') {
       Notif.error('لطفاً دسترسی به میکروفون را فعال کنید')
@@ -716,6 +796,40 @@ watch(isRecording, (recording) => {
 })
 
 onBeforeUnmount(() => {
+  // Best-effort save of the partial recording if unmounted mid-recording
+  // (route change / page teardown): upload whatever was captured so far.
+  if (isRecording.value && recordedChunks.value.length > 0) {
+    try {
+      // Final snapshot BEFORE the emit: the interval snapshots plus this
+      // one bound the data loss to ~RECOVERY_INTERVAL_MS. The snapshot is
+      // cleared after the emit — a browser death during the subsequent
+      // upload is guarded by the consumer's beforeunload warning.
+      persistRecoverySnapshot()
+
+      const blob = new Blob(recordedChunks.value, {
+        type: mediaRecorder.value?.mimeType || 'audio/webm',
+      })
+      if (blob.size > 0) {
+        const recordingName = `recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`
+        const namedFile = new File([blob], `${recordingName}.weba`, {
+          type: blob.type,
+          lastModified: Date.now(),
+        })
+        emit('save', {
+          file: namedFile,
+          name: namedFile.name,
+          size: namedFile.size,
+          type: namedFile.type,
+          uploadType: 'recorded',
+          lastModified: namedFile.lastModified,
+        })
+        stopRecoveryPersistence(true)
+      }
+    } catch (error) {
+      handleError(error)
+    }
+  }
+  clearRecoveryTimer()
   stopAllTimers()
   cleanupStream()
   cleanupAllAudio()

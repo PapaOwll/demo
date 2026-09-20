@@ -30,6 +30,7 @@
           :voices="allVoices || []"
           :external-loading="isPending || uploadVoicePending"
           :recording-reminders="recordingReminders"
+          :recovery="tpVoiceRecovery"
           @save="onSaveFile"
           @recording-change="onRecordingChange"
         >
@@ -71,7 +72,13 @@ import { useTpProvider } from '../../composables/use-tp-provider'
 import { request } from '@/data/services'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { handleError } from '@/utils/error-handler'
-import { Notif } from '@/data/services/notification-service'
+import { Notif, confirmDialog } from '@/data/services/notification-service'
+import {
+  getRecordingRecovery,
+  clearRecordingRecovery,
+  buildRecoveredFilePayload,
+} from '@/utils/recording-recovery'
+import { convertToJalaliWithTime } from '@/utils/date-utils'
 import { useUploadTpVoiceMutation } from '@/modules/TreatmentPlan/query'
 import { useTpVoice } from '../../composables/use-tp-voice'
 import { useTpStatus } from '@/modules/TreatmentPlan/composables/use-tp-status'
@@ -95,6 +102,16 @@ const isRecording = ref(false)
 const onRecordingChange = (recording) => {
   isRecording.value = recording
 }
+
+// Crash-recovery key for treatment-plan voice recordings. Only enabled when
+// the treatment plan already exists server-side — a recovered recording must
+// have an entity to be attached to. (For not-yet-created TPs the pending-
+// voice flow applies and recovery is not possible.)
+const tpVoiceRecovery = computed(() => {
+  const tpId = treatmentData?.value?.id
+  if (!tpId) return null
+  return { key: `tp-voice-${tpId}`, context: { tpId } }
+})
 
 // Check if we should block page close
 const shouldBlockClose = computed(() => isUploading.value || isRecording.value)
@@ -229,6 +246,36 @@ const onSaveFile = (fileData) => {
     }
   )
 }
+
+// On load, offer to upload a recording interrupted by tab close / crash /
+// connection loss (persisted in IndexedDB by AudioRecorder). The entry is
+// cleared immediately after reading, so the next recording starts clean.
+const recoverInterruptedRecording = async () => {
+  const tpId = treatmentData?.value?.id
+  if (!tpId) return
+
+  const key = `tp-voice-${tpId}`
+  const recovered = await getRecordingRecovery(key)
+  await clearRecordingRecovery(key)
+  if (!recovered?.blob || recovered.blob.size === 0) return
+
+  const savedAtJalali = convertToJalaliWithTime(new Date(recovered.savedAt || Date.now()))
+  confirmDialog(
+    'ذخیره ضبط ناتمام',
+    `ضبط صوتی ناتمامی برای این طرح درمان پیدا شد (${savedAtJalali}). ذخیره شود؟`,
+    () => {
+      onSaveFile(buildRecoveredFilePayload(recovered))
+    }
+  )
+}
+
+watch(
+  () => treatmentData?.value?.id,
+  (tpId) => {
+    if (tpId) recoverInterruptedRecording()
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped lang="scss">

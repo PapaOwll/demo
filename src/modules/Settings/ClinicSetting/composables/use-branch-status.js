@@ -29,7 +29,50 @@ const resolveField = (branch, field) => {
   return null
 }
 
-const METADATA_KEYS = new Set(['updatedAt', 'statusChangedAt'])
+const METADATA_KEYS = new Set([
+  'updatedAt',
+  'statusChangedAt',
+  'updated_at',
+  'status_changed_at',
+  'id',
+  'entityId',
+  'entity_id',
+  'createdAt',
+  'created_at',
+])
+
+const DATA_FIELD_LABELS = {
+  phone: 'تلفن',
+  address: 'آدرس',
+  location: 'لوکیشن',
+}
+
+const decodeDataField = (value) => {
+  if (value == null || value === '') return null
+  if (typeof value === 'object') return value
+  try {
+    const parsed = JSON.parse(value)
+    return typeof parsed === 'object' && parsed !== null ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+const resolveDataFieldLabel = (key) => DATA_FIELD_LABELS[key] ?? key
+
+const formatDataValue = (key, value) => {
+  if (value == null || value === '') return EMPTY_VALUE
+  if (key === 'phone' && Array.isArray(value)) {
+    return value.length > 0 ? value.join('، ') : EMPTY_VALUE
+  }
+  if (key === 'location' && typeof value === 'object' && !Array.isArray(value)) {
+    const { lat, lng } = value
+    if (lat != null && lng != null) return `${lat}, ${lng}`
+    return JSON.stringify(value)
+  }
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
 
 const resolveFieldLabel = (key) => {
   const lower = String(key).toLowerCase()
@@ -73,15 +116,44 @@ const buildHistoryRows = (items, statusLabels) =>
       return normalizeField(key, oldValues[key]) !== normalizeField(key, newValues[key])
     })
 
-    return changedKeys.map((key) => ({
-      id: `${rowId}-${key}`,
-      fieldLabel: resolveFieldLabel(key),
-      oldValue: formatHistoryValue(key, oldValues[key], statusLabels),
-      newValue: formatHistoryValue(key, newValues[key], statusLabels),
-      userName,
-      createdAtRaw,
-      createdAt,
-    }))
+    return changedKeys.flatMap((key) => {
+      if (key !== 'data') {
+        return [
+          {
+            id: `${rowId}-${key}`,
+            fieldLabel: resolveFieldLabel(key),
+            oldValue: formatHistoryValue(key, oldValues[key], statusLabels),
+            newValue: formatHistoryValue(key, newValues[key], statusLabels),
+            userName,
+            createdAtRaw,
+            createdAt,
+          },
+        ]
+      }
+
+      const oldData = decodeDataField(oldValues[key]) ?? {}
+      const newData = decodeDataField(newValues[key]) ?? {}
+      const subKeys = [...new Set([...Object.keys(oldData), ...Object.keys(newData)])]
+
+      return subKeys
+        .filter((subKey) => {
+          const oldValue = oldData[subKey]
+          const newValue = newData[subKey]
+          if (Array.isArray(oldValue) || Array.isArray(newValue)) {
+            return JSON.stringify(oldValue ?? null) !== JSON.stringify(newValue ?? null)
+          }
+          return oldValue !== newValue
+        })
+        .map((subKey) => ({
+          id: `${rowId}-data-${subKey}`,
+          fieldLabel: resolveDataFieldLabel(subKey),
+          oldValue: formatDataValue(subKey, oldData[subKey]),
+          newValue: formatDataValue(subKey, newData[subKey]),
+          userName,
+          createdAtRaw,
+          createdAt,
+        }))
+    })
   })
 
 const confirmDeactivation = (affectedUserCount) =>

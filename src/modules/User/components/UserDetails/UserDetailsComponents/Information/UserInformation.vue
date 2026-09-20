@@ -274,6 +274,19 @@
             <template #no-option><span /></template>
           </SelectField>
         </div>
+        <div class="col-md-3 col-12">
+          <SelectField
+            variant="outline"
+            clearable
+            :options="implantNeededTeethOptions"
+            label="حدس تعداد پایه ایمپلنت"
+            :disable="isUserInfoFieldDisabled"
+            :model-value="userData.implantNeededTeeth ?? null"
+            :error="!!errors?.implantNeededTeeth"
+            :error-message="errors?.implantNeededTeeth"
+            @update:model-value="(e) => handleChange('implantNeededTeeth', e)"
+          />
+        </div>
       </div>
       <hr class="user-information__divider" />
       <div class="row q-col-gutter-sm">
@@ -528,6 +541,12 @@ const props = defineProps({
 const loading = ref(false)
 const queryClient = useQueryClient()
 
+const IMPLANT_NEEDED_TEETH_MAX = 28
+const implantNeededTeethOptions = Array.from(
+  { length: IMPLANT_NEEDED_TEETH_MAX + 1 },
+  (_, count) => count
+)
+
 const updatedUserData = ref(null)
 const isEditMode = ref(false)
 const { hasRole } = useRoleManager()
@@ -628,6 +647,12 @@ const validationSchema = object().shape({
       return value.length <= maxLength || this.createError({ message })
     }),
   birthday: string().nullable(),
+  implantNeededTeeth: number()
+    .nullable()
+    .transform((_, value) => (value === '' || value == null ? null : Number(value)))
+    .integer('تعداد پایه ایمپلنت باید عدد صحیح باشد')
+    .min(0, 'تعداد پایه ایمپلنت باید بین 0 تا 28 باشد')
+    .max(IMPLANT_NEEDED_TEETH_MAX, 'تعداد پایه ایمپلنت باید بین 0 تا 28 باشد'),
   methodOfIntroduction: mixed().test('methodOfIntroduction-validation', function (value) {
     const isRequiredRole = hasRole('superadmin') || hasRole('admin')
 

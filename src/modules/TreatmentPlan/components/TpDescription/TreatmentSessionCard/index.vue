@@ -33,18 +33,41 @@
       </div>
     </div>
 
-    <TreatmentServiceItem
-      v-for="row in group.items"
-      :key="row.id"
-      :row="row"
-      :can-view-cost="canViewCost"
-      :convert-to-jalali="convertToJalali"
-      :get-exact-tooth-numbers="getExactToothNumbers"
-      :is-expanded="isRowExpanded(row?.id)"
-      @toggle-expand="toggleExpand"
-      @delete="handleDelete"
-      @edit="handleEdit"
-    />
+    <div class="tpd-card__tabs">
+      <TabItem v-model="activeTab" :group="tabGroup" />
+    </div>
+    <div v-if="activeTab === TAB_SERVICES" class="tpd-card__services">
+      <TreatmentServiceItem
+        v-for="row in group.items"
+        :key="row.id"
+        :row="row"
+        :can-view-cost="canViewCost"
+        :convert-to-jalali="convertToJalali"
+        :get-exact-tooth-numbers="getExactToothNumbers"
+        :is-expanded="isRowExpanded(row?.id)"
+        @toggle-expand="toggleExpand"
+        @delete="handleDelete"
+        @edit="handleEdit"
+      />
+    </div>
+
+    <div v-else-if="activeTab === TAB_VOICES" class="tpd-card__voices">
+      <template v-if="bookingVoices.length > 0">
+        <AudioPlayerItem
+          v-for="(voice, index) in bookingVoices"
+          :key="voice.id"
+          :audio-file="voice"
+          :index="index"
+          :recordable="false"
+          @download="handleVoiceDownload"
+        />
+      </template>
+      <template v-else>
+        <Typography variant="body" size="4" color="grey" class="tpd-card__voices-empty">
+          فایل صوتی برای این جلسه ثبت نشده است
+        </Typography>
+      </template>
+    </div>
 
     <UserRadiologyUploader
       ref="uploaderRef"
@@ -71,11 +94,14 @@
 import { ref, computed, watch } from 'vue'
 import { IconDental, IconEye, IconFilePlus } from '@tabler/icons-vue'
 import Typography from '@/base/Typography'
+import TabItem from '@/base/TabItem'
 import ImagePreviewModal from '@/components/common/ImagePreviewModal'
 import UserRadiologyUploader from '@/modules/User/components/UserDetails/UserDetailsComponents/UserMedicalDocs/components/UserRadiologyUploader'
 import { useQueryClient } from '@tanstack/vue-query'
 import { getCreatorName } from '@/modules/TreatmentPlan/utils/creator'
 import TreatmentServiceItem from './TreatmentServiceItem'
+import AudioPlayerItem from '@/components/audio/AudioPlayerItem'
+import { useBookingVoicesQuery } from '@/modules/TreatmentPlan/query'
 
 const props = defineProps({
   group: { type: Object, required: true },
@@ -93,8 +119,44 @@ const props = defineProps({
   handleEdit: { type: Function, required: true },
 })
 
+const TAB_SERVICES = 'services'
+const TAB_VOICES = 'voices'
+
+const activeTab = ref(TAB_SERVICES)
+
+const tabGroup = [
+  { value: TAB_SERVICES, label: 'خدمت ها' },
+  { value: TAB_VOICES, label: 'فایل های صوتی' },
+]
+
 const queryClient = useQueryClient()
 const uploaderRef = ref(null)
+
+const { data: bookingVoicesData } = useBookingVoicesQuery(computed(() => props.group?.bookingId))
+
+const bookingVoices = computed(() =>
+  (bookingVoicesData.value || []).map((voice) => ({
+    id: voice.id,
+    url: voice.path,
+    name: voice.name || voice.fileName || `voice-${voice.id}`,
+    durationMs: voice.duration || 0,
+    uploadType: 'voice',
+    originalVoice: voice,
+    date: voice.createdAt ? new Date(voice.createdAt) : new Date(),
+  }))
+)
+
+const handleVoiceDownload = (file) => {
+  if (!file?.url) return
+  const link = document.createElement('a')
+  link.href = file.url
+  link.download = file.name || 'voice.wav'
+  link.style.display = 'none'
+  document.body.append(link)
+  link.click()
+  setTimeout(() => link.remove(), 100)
+}
+
 const hasUploadedFile = ref(false)
 
 const uploadedImages = computed(() => props.group.performFiles || [])
@@ -215,6 +277,24 @@ const onUploadComplete = async () => {
     font-weight: 500;
     font-size: 14px;
     color: $grey-text;
+  }
+
+  &__tabs {
+    width: 100%;
+    display: flex;
+    justify-content: start;
+    margin: $spacing-sm 0;
+  }
+
+  &__voices {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+  }
+
+  &__voices-empty {
+    text-align: center;
+    padding: $spacing-lg 0;
   }
 
   &__action-icon {

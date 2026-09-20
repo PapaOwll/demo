@@ -43,3 +43,6 @@ export const treatmentPlan = (filters) => request.get('v1/treatment-plan', { par
 export const apiGetBookingCalendar = (params) => request.get('v1/booking/calendar', { params })
 export const apiBookingCancellation = (bookingId, date) =>
   request.post(`v1/booking/${bookingId}/cancellation`, date)
+
+export const apiGetPatientsWithoutChequeCount = (config = {}) =>
+  request.get('v1/booking/patients-without-cheque-count', config)

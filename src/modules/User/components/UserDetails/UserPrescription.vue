@@ -5,21 +5,28 @@
     class="prescription"
     :width="560"
     height="650px"
-    @update:model-value="emits('close')"
-    @close="closeForm"
+    @update:model-value="closeForm"
   >
     <div class="prescription__body">
       <TabItem v-model="activeTab" class="prescription__tabs" :group="tabItems" />
 
-      <div v-if="activeTab === TABS.IMAGING" class="prescription__form">
+      <div v-if="!userData?.nationalCode" class="prescription__national-code">
+        <div class="prescription__foreign-toggle">
+          <Toggle v-model="isForeignNational" label="اتباع است؟" />
+        </div>
         <TextField
-          v-if="!userData?.nationalCode"
           v-model="nationalCode"
-          label="کد ملی بیمار"
+          :label="isForeignNational ? 'کد فراگیر/ فیدا/ پاسپورت' : 'کد ملی بیمار'"
           required
           variant="outline"
           clearable
+          :maxlength="nationalCodeMaxLength"
+          :error="!!errors.nationalCode"
+          :error-message="errors.nationalCode"
         />
+      </div>
+
+      <div v-if="activeTab === TABS.IMAGING" class="prescription__form">
         <SelectField
           v-model="imagingSrvId"
           :options="imagingOptions"
@@ -32,6 +39,8 @@
           variant="outline"
           required
           :loading="isSettingsLoading"
+          :error="!!errors.imagingSrvId"
+          :error-message="errors.imagingSrvId"
         />
         <div v-if="selectedImaging" class="prescription__info">
           <div class="prescription__info-header">
@@ -47,7 +56,7 @@
             <Typography variant="body" size="4" weight="bold" color="light-blue" tag="span">
               {{ userData?.name }}
             </Typography>
-            با شماره ملی
+            با {{ isForeignNational ? 'کد فراگیر/ فیدا/ پاسپورت' : 'شماره ملی' }}
             <Typography variant="body" size="4" weight="bold" color="light-blue" tag="span">
               {{ displayNationalCode }}
             </Typography>
@@ -66,6 +75,8 @@
           required
           clearable
           :loading="isSettingsLoading"
+          :error="!!errors.prescriptionReason"
+          :error-message="errors.prescriptionReason"
         />
         <SelectField
           v-model="selectedMedicines"
@@ -80,6 +91,8 @@
           required
           :disable="!prescriptionReason"
           :placeholder="prescriptionReason ? 'جستجوی دارو...' : 'ابتدا علت تجویز را انتخاب کنید'"
+          :error="!!errors.selectedMedicines"
+          :error-message="errors.selectedMedicines"
         />
       </div>
     </div>
@@ -91,7 +104,6 @@
           text="ثبت نسخه"
           is-full-width
           :is-loading="isImagingPending || isDrugPending"
-          :is-disabled="!isFormValid"
           @click="onSubmit"
         />
       </div>
@@ -108,11 +120,14 @@ import Typography from '@/base/Typography'
 import TextField from '@/base/TextField'
 import SelectField from '@/base/SelectField'
 import TabItem from '@/base/TabItem'
+import Toggle from '@/base/Toggle'
 import { useApiSendOpgRequest, useApiSendDrugPrescription } from '@/modules/User/query/index'
 import { useApiGetSettings } from '@/modules/Settings/query'
-import { convertToEnNumber } from '@/utils/convert-check-digits'
+import { convertToEnNumber, extractNumbers } from '@/utils/convert-check-digits'
 import { Notif } from '@/data/services/notification-service'
 import { useQueryClient } from '@tanstack/vue-query'
+import { array, mixed, object, string } from 'yup'
+import useYup from '@/composables/use-yup'
 
 const TABS = {
   IMAGING: 'imaging',
@@ -143,6 +158,7 @@ const { data: prescriptionSettings, isLoading: isSettingsLoading } =
 
 const activeTab = ref(props.initialTab)
 const nationalCode = ref('')
+const isForeignNational = ref(false)
 const imagingSrvId = ref(null)
 const prescriptionReason = ref(null)
 const selectedMedicines = ref([])
@@ -160,8 +176,6 @@ const imagingOptions = computed(
   () => prescriptionSettings.value?.imaging?.filter((item) => item.isActive) ?? []
 )
 
-// Identified by srvId (not the kind string) so the whole flow — selection,
-// validation and payload — carries the service id the backend expects.
 const selectedImaging = computed(() =>
   imagingOptions.value.find((item) => item.srvId === imagingSrvId.value)
 )
@@ -173,7 +187,7 @@ watch(
   reasonDrugs,
   (drugs) => {
     filteredMedicineOptions.value = [...drugs]
-    selectedMedicines.value = []
+    selectedMedicines.value = [...drugs]
   },
   { immediate: true }
 )
@@ -187,24 +201,6 @@ const filterMedicines = (val, update) => {
   })
 }
 
-const resetForm = () => {
-  nationalCode.value = ''
-  imagingSrvId.value = null
-  prescriptionReason.value = null
-  activeTab.value = props.initialTab
-}
-
-watch(
-  () => props.visible,
-  (visible) => {
-    if (visible) {
-      activeTab.value = props.initialTab
-    } else {
-      resetForm()
-    }
-  }
-)
-
 watch(
   () => props.userData?.nationalCode,
   (val) => {
@@ -213,16 +209,71 @@ watch(
   { immediate: true }
 )
 
+const nationalCodeMaxLength = computed(() => (isForeignNational.value ? 16 : 10))
+
+watch(nationalCode, (val) => {
+  const sanitized = extractNumbers(val).slice(0, nationalCodeMaxLength.value)
+  if (sanitized !== val) {
+    nationalCode.value = sanitized
+  }
+})
+
 const displayNationalCode = computed(
   () => convertToEnNumber(nationalCode.value) || convertToEnNumber(props.userData?.nationalCode)
 )
 
-const isFormValid = computed(() => {
-  if (activeTab.value === TABS.IMAGING) {
-    return !!imagingSrvId.value && !!displayNationalCode.value
+watch(isForeignNational, () => {
+  if (nationalCode.value.length > nationalCodeMaxLength.value) {
+    nationalCode.value = nationalCode.value.slice(0, nationalCodeMaxLength.value)
   }
-  return !!prescriptionReason.value && selectedMedicines.value?.length > 0
 })
+
+const formData = computed(() => ({
+  nationalCode: displayNationalCode.value,
+  isForeignNational: isForeignNational.value,
+  activeTab: activeTab.value,
+  imagingSrvId: imagingSrvId.value,
+  prescriptionReason: prescriptionReason.value,
+  selectedMedicines: selectedMedicines.value,
+}))
+
+const validationSchema = object().shape({
+  nationalCode: string()
+    .nullable()
+    .required('کد ملی بیمار الزامیست')
+    .matches(/^\d*$/, 'مقدار باید عدد باشد')
+    .test('nationalCode-max-length', function (value) {
+      const { isForeignNational: foreign } = this.parent
+      if (!value) return true
+      const maxLength = foreign ? 16 : 10
+      const message = foreign
+        ? 'کد فراگیر/ فیدا/ پاسپورت حداکثر 16 رقم است'
+        : 'کدملی حداکثر 10 رقم است'
+      return value.length <= maxLength || this.createError({ message })
+    }),
+  isForeignNational: mixed().nullable(),
+  activeTab: mixed().nullable(),
+  imagingSrvId: mixed()
+    .nullable()
+    .test('imaging-required', 'نوع تصویربرداری الزامیست', function (value) {
+      if (this.parent.activeTab !== 'imaging') return true
+      return value != null
+    }),
+  prescriptionReason: mixed()
+    .nullable()
+    .test('reason-required', 'علت تجویز دارو الزامیست', function (value) {
+      if (this.parent.activeTab === 'imaging') return true
+      return !!value
+    }),
+  selectedMedicines: array()
+    .nullable()
+    .test('medicines-required', 'انتخاب حداقل یک دارو الزامیست', function (value) {
+      if (this.parent.activeTab === 'imaging') return true
+      return value?.length > 0
+    }),
+})
+
+const { validate, validateAt, errors, resetErrors } = useYup(validationSchema)
 
 const { mutate: sendOpgRequest, isPending: isImagingPending } = useApiSendOpgRequest({
   onError: undefined,
@@ -252,11 +303,11 @@ const notifyError = (error) => {
   })
 }
 
-const onSendImagingRequest = () => {
+const onSendImagingRequest = (code) => {
   sendOpgRequest(
     {
       id: props.userData?.id,
-      nationalCode: displayNationalCode.value,
+      nationalCode: code,
       srvId: imagingSrvId.value,
     },
     {
@@ -270,11 +321,11 @@ const onSendImagingRequest = () => {
   )
 }
 
-const onSendDrugRequest = () => {
+const onSendDrugRequest = (code) => {
   sendDrugPrescription(
     {
       id: props.userData?.id,
-      nationalCode: convertToEnNumber(props.userData?.nationalCode),
+      nationalCode: code,
       items: selectedMedicines.value.map((drug) => ({ srvId: drug.srvId })),
     },
     {
@@ -288,18 +339,64 @@ const onSendDrugRequest = () => {
   )
 }
 
-const onSubmit = () => {
-  if (activeTab.value === TABS.IMAGING) {
-    onSendImagingRequest()
-  } else {
-    onSendDrugRequest()
+const onSubmit = async () => {
+  const { isValid, payload } = await validate(formData.value)
+  if (!isValid) {
+    Notif.error('لطفا خطاهای فرم را برطرف کنید')
+    return
   }
+  if (activeTab.value === TABS.IMAGING) {
+    onSendImagingRequest(payload.nationalCode)
+  } else {
+    onSendDrugRequest(payload.nationalCode)
+  }
+}
+
+const resetForm = () => {
+  nationalCode.value = ''
+  isForeignNational.value = false
+  imagingSrvId.value = null
+  prescriptionReason.value = null
+  selectedMedicines.value = []
+  filteredMedicineOptions.value = []
+  activeTab.value = props.initialTab
+  resetErrors()
 }
 
 const closeForm = () => {
   resetForm()
   emits('close')
 }
+
+watch(nationalCode, () => {
+  // Skip live validation while the modal is closed so resetForm's clearing
+  // doesn't leave a stale "required" error for the next open.
+  if (!props.visible) return
+  validateAt('nationalCode', displayNationalCode.value, formData.value)
+})
+
+watch(imagingSrvId, (val) => {
+  validateAt('imagingSrvId', val, formData.value)
+})
+
+watch(prescriptionReason, (val) => {
+  validateAt('prescriptionReason', val, formData.value)
+})
+
+watch(selectedMedicines, (val) => {
+  validateAt('selectedMedicines', val, formData.value)
+})
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (visible) {
+      activeTab.value = props.initialTab
+    } else {
+      resetForm()
+    }
+  }
+)
 </script>
 
 <style scoped lang="scss">
@@ -312,6 +409,17 @@ const closeForm = () => {
 
   &__tabs {
     align-self: center;
+  }
+
+  &__national-code {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__foreign-toggle {
+    display: flex;
+    justify-content: flex-start;
   }
 
   &__form {

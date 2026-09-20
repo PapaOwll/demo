@@ -169,7 +169,8 @@ const [userDetailsVisible, { toggle: toggleDetailsDialog }] = useDisclosure()
 const [contactFormVisible, { toggle: toggleContactDialog }] = useDisclosure()
 const [bookingFormVisible, { toggle: toggleBookingDialog }] = useDisclosure()
 const [taskFormVisible, { toggle: toggleTaskDialog }] = useDisclosure()
-const [opgDialogVisible, { toggle: toggleOpgDialog }] = useDisclosure()
+const [opgDialogVisible, { open: openOpgDialogVisible, close: closeOpgDialogVisible }] =
+  useDisclosure()
 
 const { mutate: impersonateLoginMutation } = useLoginImpersonate()
 const { mutate: impersonateMyToothMutation } = useImpersonateMyTooth()
@@ -300,11 +301,11 @@ const closeSendInfoForm = () => {
 
 const openOpgDialog = () => {
   userData.value = propData.value
-  toggleOpgDialog()
+  openOpgDialogVisible()
 }
 const closeOpgDialog = () => {
   userData.value = null
-  toggleOpgDialog()
+  closeOpgDialogVisible()
 }
 const changeUserLevel = (user, isVip) => {
   confirmDialog(
@@ -464,7 +465,7 @@ const userMenuItems = computed(() => [
     function: loginAsMyTooth,
   },
   {
-    title: 'ثبت درخواست OPG',
+    title: 'ثبت درخواست نسخه',
     condition: true,
     function: openOpgDialog,
     isSeparate: true,

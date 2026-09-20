@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/vue-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, unref } from 'vue'
 import { ENABLE_USER_DETAIL_MOCKS } from '@/mocks/config'
 import {
@@ -45,6 +45,8 @@ import {
   apiUpdateUserTpWarrantyStatus,
   apiCalculateCouponCode,
   apiGetTreatmentPlanBookings,
+  apiAttachBookingVoice,
+  apiGetBookingServes,
 } from '../api'
 import { camelize } from '@/utils/convert-to-camel-snake'
 import { convertShowableTeethToTeeth, findTeethFromTeethData } from '../utils/teeth'
@@ -145,8 +147,10 @@ export const useGetServeItemsByKeyQuery = (key, options = {}) =>
     ...options,
   })
 
-export const useUpsertTreatmentPlanMutation = () =>
-  useMutation({
+export const useUpsertTreatmentPlanMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
     mutationFn: ({ id, currentStepNumber, ...data }) => {
       if (id && currentStepNumber > 1) {
         return apiUpdateTreatmentPlan(data, id)
@@ -156,7 +160,10 @@ export const useUpsertTreatmentPlanMutation = () =>
       }
       return apiCreateTreatmentPlan(data)
     },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['booking', 'patients-without-cheque-count'] }),
   })
+}
 
 export const useGetUserByIdQuery = (userId, options = {}) =>
   useQuery({
@@ -200,10 +207,15 @@ export const useGetTreatmentPlanByKeyQuery = (key, options = {}) =>
     ...options,
   })
 
-export const useActivateTreatmentPlanMutation = () =>
-  useMutation({
+export const useActivateTreatmentPlanMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
     mutationFn: (id) => apiActivateTreatmentPlan(id),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['booking', 'patients-without-cheque-count'] }),
   })
+}
 
 export const useGetUserActivateTreatmentPlanQuery = (id, options = {}) =>
   useQuery({
@@ -516,5 +528,21 @@ export const useTreatmentPlanBookingsQuery = (filters, options = {}) =>
     queryKey: ['treatment-plan-bookings', filters],
     queryFn: () => apiGetTreatmentPlanBookings(unref(filters)),
     select: (data) => data?.data?.data ?? data?.data ?? data,
+    ...options,
+  })
+
+export const useAttachBookingVoiceMutation = (options = {}) =>
+  useMutation({
+    mutationFn: ({ bookingId, ...data }) => apiAttachBookingVoice(bookingId, data),
+    onError: (err) => handleError(err),
+    ...options,
+  })
+
+export const useBookingVoicesQuery = (bookingId, options = {}) =>
+  useQuery({
+    enabled: !!unref(bookingId),
+    queryKey: ['booking-voices', bookingId],
+    queryFn: () => apiGetBookingServes(unref(bookingId)),
+    select: (data) => data?.data?.voices ?? [],
     ...options,
   })
