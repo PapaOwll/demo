@@ -458,7 +458,7 @@ on('post', String.raw`v1/(clinic|beauty)/serves/(\d+)/items`, ({ match, body }) 
       }
     })
     persist()
-    return ok({ data: serve, message: 'تعرفه با موفقیت ذخیره شد' })
+    return ok({ data: serve, message: 'محاسبه هزینه با موفقیت ذخیره شد' })
   }
   let question =
     (body?.question_id &&

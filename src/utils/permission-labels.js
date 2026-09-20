@@ -28,7 +28,7 @@ export const SUBMODULE_LABELS = {
   treatmentPlanFinancial: 'مالی',
   manualPayment: 'پرداخت دستی',
   generalSetting: 'تنظیمات عمومی',
-  pricing: 'قیمت‌گذاری',
+  pricing: 'محاسبه هزینه',
   personalSetting: 'تنظیمات شخصی',
   clinicSetting: 'تنظیمات کلینیک',
   operatorSetting: 'تنظیمات اپراتور',
