@@ -33,6 +33,10 @@ const createDescription = (moduleTitle, permissionTitle, subModuleTitle = null) 
   return `دسترسی ${permissionTitle} به ${moduleTitle}`
 }
 
+// Responses are camelized by the axios layer, so a module's parent may arrive
+// either as `parent_id` or `parentId` — normalize before hierarchy checks.
+const moduleParentId = (module) => module.parent_id ?? module.parentId ?? null
+
 // Helper to create a warning for sensitive permissions
 const createWarning = (permissionKey, moduleKey, subModuleKey) => {
   const sensitivePermissions = {
@@ -266,8 +270,10 @@ export function buildDynamicCategories(aclStructure) {
 
       // Create features for each module in this category
       const features = categoryModules.flatMap((module) => {
-        const isSubModule = module.parent_id !== null
-        const parentModule = isSubModule ? modules.find((m) => m.id === module.parent_id) : null
+        const isSubModule = moduleParentId(module) !== null
+        const parentModule = isSubModule
+          ? modules.find((m) => m.id === moduleParentId(module))
+          : null
 
         // Create features for each permission
         return permissions.map((permission) => {
@@ -322,8 +328,8 @@ export function buildDynamicCategories(aclStructure) {
 
   if (otherCategory && uncategorized.length > 0) {
     const uncategorizedFeatures = uncategorized.flatMap((module) => {
-      const isSubModule = module.parent_id !== null
-      const parentModule = isSubModule ? modules.find((m) => m.id === module.parent_id) : null
+      const isSubModule = moduleParentId(module) !== null
+      const parentModule = isSubModule ? modules.find((m) => m.id === moduleParentId(module)) : null
 
       return permissions.map((permission) => {
         const featureId = generateFeatureId(

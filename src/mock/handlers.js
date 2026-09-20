@@ -712,27 +712,106 @@ on('put', String.raw`v1/user/(\d+)/work-time`, ({ body }) => {
   return ok({ data: body })
 })
 
-// acl / roles — list + editable per-role permission sets (persisted)
+// acl / roles — list + editable per-role permission sets (persisted).
+// GET/PUT speak the readable shape RoleSetting.vue expects (modules with
+// `permissions: {<key>: 'all'|'owner'|'branch'|null}`); PUT accepts the
+// snake-shaped payload updateRoleACL() sends and re-hydrates it.
+const aclModules = () => R.aclStructure.modules
+const aclPermissions = () => R.aclStructure.permissions
+const moduleById = (id) => aclModules().find((m) => String(m.id) === String(id))
+const permissionById = (id) => aclPermissions().find((p) => String(p.id) === String(id))
+
+const emptyPermissions = () =>
+  Object.fromEntries(aclPermissions().map((permission) => [permission.key, null]))
+
+// Sensible demo defaults per seeded role — derived (not persisted) until the
+// user actually saves, so the table is pre-populated yet stays overridable.
+const ADVISOR_MODULES = new Set([
+  'dashboard',
+  'user',
+  'booking',
+  'treatment-plan',
+  'contact',
+  'task',
+])
+const defaultRoleAcl = (roleId) => {
+  const role = findById('roles', roleId)
+  const profile =
+    role?.slug === 'manager' ? 'manager' : role?.slug === 'advisor' ? 'advisor' : 'minimal'
+  const allowedActions =
+    profile === 'manager' ? null : profile === 'advisor' ? ['view', 'create', 'update'] : ['view']
+  const modules = aclModules().map((module) => {
+    const hasAccess =
+      profile === 'manager' ||
+      (profile === 'advisor' ? ADVISOR_MODULES.has(module.key) : module.key === 'dashboard')
+    const permissions = Object.fromEntries(
+      aclPermissions().map((permission) => [
+        permission.key,
+        hasAccess && (profile === 'manager' || allowedActions.includes(permission.key))
+          ? 'all'
+          : null,
+      ])
+    )
+    return {
+      id: module.id,
+      key: module.key,
+      title: module.title,
+      parent_id: module.parent_id,
+      has_access: hasAccess,
+      hidden: false,
+      permissions,
+    }
+  })
+  return { id: Number(roleId), permissions: aclPermissions(), modules }
+}
 on('get', 'acl/roles', () => ok({ data: coll('roles') }))
-on('get', 'acl/structure', () => ok({ data: { modules: [], permissions: [] } }))
+on('get', 'acl/structure', () => ok({ data: R.aclStructure }))
 on('get', String.raw`acl/role/(\d+)`, ({ match }) =>
   ok({
-    data: settingsStore()[`acl.role.${match[1]}`] ??
-      findById('roles', match[1]) ?? { id: Number(match[1]), modules: [] },
+    data: settingsStore()[`acl.role.${match[1]}`] ?? defaultRoleAcl(match[1]),
   })
 )
 on('post', 'acl/role', ({ body }) => {
   const item = { ...body, id: nextId('roles') }
   coll('roles').push(item)
+  // CreateRoleDialog promises "دسترسی‌ها از نقش والد کپی خواهند شد" — seed the
+  // new role's ACL from the parent's persisted set (or the parent's default).
+  const parentRoleId = body?.parent_role_id ?? body?.parentRoleId
+  if (parentRoleId) {
+    const source = settingsStore()[`acl.role.${parentRoleId}`] ?? defaultRoleAcl(parentRoleId)
+    settingsStore()[`acl.role.${item.id}`] = { ...source, id: item.id }
+  }
   persist()
   return ok({ data: item })
 })
 on('put', String.raw`acl/role/(\d+)`, ({ match, body }) => {
-  settingsStore()[`acl.role.${match[1]}`] = { ...body, id: Number(match[1]) }
+  const readableModules = (body?.modules ?? []).map((sent) => {
+    const meta = moduleById(sent.module_id ?? sent.moduleId) ?? {}
+    const permissions = emptyPermissions()
+    ;(sent.permissions ?? []).forEach((sentPermission) => {
+      const permission = permissionById(sentPermission.permission_id ?? sentPermission.permissionId)
+      if (permission) permissions[permission.key] = sentPermission.access ?? null
+    })
+    return {
+      id: meta.id,
+      key: meta.key,
+      title: meta.title,
+      parent_id: meta.parent_id ?? null,
+      has_access: sent.has_access ?? sent.hasAccess ?? false,
+      hidden: sent.hidden ?? false,
+      permissions,
+    }
+  })
+  const stored = {
+    id: Number(match[1]),
+    permissions: aclPermissions(),
+    modules: readableModules,
+  }
+  settingsStore()[`acl.role.${match[1]}`] = stored
   const role = findById('roles', match[1])
   if (role && body?.title) role.title = body.title
   persist()
-  return ok({ data: settingsStore()[`acl.role.${match[1]}`] })
+  return ok({ data: stored })
 })
 
 // announcements (settings → notifications tab)

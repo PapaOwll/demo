@@ -374,3 +374,36 @@ export const reportWidgets = {
   usersWithoutStatusCount: widget(2, 'کاربران بدون وضعیت', 'yellow', '/users', 'IconUserQuestion'),
   rawUsersCount: widget(5, 'کاربران خام', 'blue', '/users', 'IconUserPlus'),
 }
+
+// ACL structure (GET acl/structure) — the modules × permissions grid that
+// fills the تنظیمات دسترسی table and its راهنما modal. Module keys are
+// deliberately matched by build-dynamic-categories.js CATEGORY_PATTERNS so
+// every module lands in one of the guide categories.
+export const aclStructure = {
+  permissions: [
+    { id: 1, key: 'view', title: 'مشاهده' },
+    { id: 2, key: 'create', title: 'ایجاد' },
+    { id: 3, key: 'update', title: 'ویرایش' },
+    { id: 4, key: 'delete', title: 'حذف' },
+    { id: 5, key: 'recreate', title: 'رونوشت' },
+    { id: 6, key: 'financial', title: 'مالی' },
+    { id: 7, key: 'impersonate', title: 'جعل هویت' },
+  ],
+  modules: [
+    { id: 1, key: 'dashboard', title: 'داشبورد', parent_id: null },
+    { id: 2, key: 'user', title: 'مدیریت بیماران', parent_id: null },
+    { id: 3, key: 'user-vip', title: 'بیماران VIP', parent_id: 2 },
+    { id: 4, key: 'booking', title: 'نوبت‌دهی و تقویم', parent_id: null },
+    { id: 5, key: 'treatment-plan', title: 'طرح درمان', parent_id: null },
+    { id: 6, key: 'treatment-plan-financial', title: 'مالی طرح درمان', parent_id: 5 },
+    { id: 7, key: 'perform', title: 'انجام خدمات', parent_id: 5 },
+    { id: 8, key: 'contact', title: 'تماس‌ها', parent_id: null },
+    { id: 9, key: 'task', title: 'وظایف', parent_id: null },
+    { id: 10, key: 'ads', title: 'مارکتینگ و تبلیغات', parent_id: null },
+    { id: 11, key: 'survey', title: 'نظرسنجی', parent_id: null },
+    { id: 12, key: 'report', title: 'گزارشات', parent_id: null },
+    { id: 13, key: 'setting', title: 'تنظیمات', parent_id: null },
+    { id: 14, key: 'role', title: 'مدیریت دسترسی‌ها', parent_id: null },
+    { id: 15, key: 'attendance', title: 'حضور و غیاب', parent_id: null },
+  ],
+}
