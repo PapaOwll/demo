@@ -92,7 +92,7 @@ export const usePostRestTime = () => {
     mutationFn: apiPostRestTime,
     // TODO: Remove validate and notif from here
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['rest-time'] })
+      queryClient.invalidateQueries({ queryKey: ['operator-setting', 'rest-time'] })
       Notif.success('با موفقیت انجام شد')
     },
     onError: (error) => {

@@ -245,7 +245,7 @@ const { data: restTimeData } = useGetRestTime()
 
 const handleTransformData = (data, direction = 'toLocal') => {
   if (direction === 'toLocal') {
-    state.data = data?.map((item) => {
+    state.data = (data ?? []).map((item) => {
       const [startHour, startMinute] = item.startTime.split(':')
       const [endHour, endMinute] = item.endTime.split(':')
       return {

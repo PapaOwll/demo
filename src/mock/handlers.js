@@ -647,6 +647,29 @@ on('post', 'v1/(clinic|beauty)/info', ({ body }) => {
   persist()
   return ok({ data: settingsStore().clinicInfo, message: 'اطلاعات کلینیک با موفقیت ذخیره شد' })
 })
+// Operator rest-time ranges (RestTimeTab reads {setting: [{roleId, startTime,
+// endTime}]}). Registered BEFORE the generic v1/setting/general/:key routes —
+// dispatch picks the first matching route, so this specific handler must be
+// pushed into the table ahead of the catch-all.
+const REST_TIME_KEY = 'general.employeeBreakTimeRange'
+const restTimeSeed = () => [
+  { role_id: 1, start_time: '13:00', end_time: '14:00' },
+  { role_id: 2, start_time: '13:30', end_time: '14:30' },
+]
+// Tolerate both the fresh `{setting: [...]}` payload and the bare array a
+// previous generic-handler save may have persisted.
+const normalizeRestTime = (value) => ({
+  setting: Array.isArray(value) ? value : (value?.setting ?? restTimeSeed()),
+})
+on('get', 'v1/setting/general/employeeBreakTimeRange', () =>
+  ok({ data: normalizeRestTime(settingsStore()[REST_TIME_KEY]) })
+)
+on('post', 'v1/setting/general/employeeBreakTimeRange', ({ body }) => {
+  const stored = normalizeRestTime(body)
+  settingsStore()[REST_TIME_KEY] = stored
+  persist()
+  return ok({ data: stored, message: 'زمان استراحت با موفقیت ذخیره شد' })
+})
 on('get', 'v1/setting/general/([a-zA-Z0-9_-]+)', ({ match }) =>
   ok({ data: settingsStore()[`general.${match[1]}`] ?? {} })
 )
