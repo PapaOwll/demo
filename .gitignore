@@ -30,7 +30,9 @@ coverage
 .qodo
 .github
 !.github/workflows/deploy-pages.yml
-.claude
+.claude/*
+!.claude/commands/
+!.claude/last-main-sync
 .kilo/*
 !.kilo/skills/
 !.kilo/setup-jira-mcp.ps1
