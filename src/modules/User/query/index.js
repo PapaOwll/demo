@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/vue-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { unref, computed } from 'vue'
 import {
   apiChangeLevel,
@@ -685,19 +685,28 @@ export const useUserMergeMutation = (options = {}) =>
     ...options,
   })
 
-export const useCreateUserChequesMutation = (options = {}) =>
-  useMutation({
+export const useCreateUserChequesMutation = (options = {}) => {
+  const queryClient = useQueryClient()
+  return useMutation({
     mutationFn: ({ userId, cheques }) => apiCreateUserCheques(userId, { cheques }),
     onError: (error) => handleError(error),
+    // New cheques shrink the header "patients without cheque" warning count.
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['booking', 'patients-without-cheque-count'] }),
     ...options,
   })
+}
 
-export const useDeleteUserChequeMutation = (options = {}) =>
-  useMutation({
+export const useDeleteUserChequeMutation = (options = {}) => {
+  const queryClient = useQueryClient()
+  return useMutation({
     mutationFn: ({ userId, chequeId }) => apiDeleteUserCheque(userId, chequeId),
     onError: (error) => handleError(error),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['booking', 'patients-without-cheque-count'] }),
     ...options,
   })
+}
 
 export const useCreateBetaInstallmentsMutation = (options = {}) =>
   useMutation({

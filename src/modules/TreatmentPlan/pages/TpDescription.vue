@@ -365,6 +365,8 @@ const onSaveVoiceFile = (fileData) => {
             {
               id: res.data[0]?.id,
               type: fileData?.uploadType,
+              // AudioRecorder reports milliseconds — matches the voices seed shape.
+              duration: fileData?.durationMs,
             },
           ],
         })

@@ -285,7 +285,8 @@ on('put', String.raw`v1/(clinic|beauty)/branches/(\d+)`, ({ match, body }) => {
       coll('branchStatusHistory').unshift({
         id: nextId('branchStatusHistory'),
         branch_id: Number(match[2]),
-        user: { first_name: 'نیلوفر', name: 'احمدی' },
+        // Demo acting user — same person the seeds attribute recent edits to.
+        user: { first_name: '', name: R.currentUser.user.name },
         created_at: nowStr(),
         old_values: oldValues,
         new_values: newValues,
@@ -570,10 +571,14 @@ on('get', 'v1/file/status', () => ok({ data: [] }))
 // survive reloads; small images are inlined as data URLs (capped low — the
 // whole db shares one localStorage key), larger payloads fall back to the
 // type's sample placeholder. Booking voice uploads (AW-152) are inlined too
-// so recorded sessions keep playing across reloads — audio is granted a
-// larger cap than images.
+// so recorded sessions keep playing across reloads — audio gets a much larger
+// cap than images: MediaRecorder (webm/opus) easily produces multi-minute
+// recordings in the megabytes, and a placeholder path would never play in the
+// offline demo. Keep it well under the ~5MB localStorage budget shared by the
+// whole db; persist() swallows quota errors, so over-budget writes are skipped
+// rather than crashing the app.
 const INLINE_IMAGE_MAX_BYTES = 300_000
-const INLINE_AUDIO_MAX_BYTES = 600_000
+const INLINE_AUDIO_MAX_BYTES = 2_500_000
 const readFileAsDataUrl = (file) =>
   new Promise((resolve) => {
     const reader = new FileReader()
