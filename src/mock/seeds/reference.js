@@ -121,7 +121,7 @@ export const currentUser = {
       mod(13, 'setting', 'تنظیمات', 'IconSettings', [
         sub('generalSetting', 'تنظیمات عمومی'),
         sub('clinicSetting', 'تنظیمات کلینیک'),
-        sub('pricing', 'تعرفه‌ها'),
+        sub('pricing', 'محاسبه هزینه'),
         sub('operatorSetting', 'تنظیمات کارمندان'),
         sub('roleSetting', 'تنظیمات دسترسی'),
         sub('personalSetting', 'تنظیمات شخصی'),
@@ -188,6 +188,12 @@ export const serves = [
       q(246, 2463, 'نیاز به پیون استخوان دارد؟', 2, [
         qItem(24_615, 'بله', 8_000_000),
         qItem(24_616, 'خیر', 0),
+      ]),
+      // Type 11 (UNIT_WITH_TEETH) — brand options priced per tooth/unit, so
+      // every QUESTION_TYPE has a seeded example across the serves.
+      q(246, 2464, 'فیکسچر به ازای هر دندان', 11, [
+        qItem(24_617, 'تیتانیوم', 4_500_000),
+        qItem(24_618, 'زیرکونیا', 6_500_000),
       ]),
     ],
   },
