@@ -670,6 +670,8 @@ on('post', 'v1/setting/general/employeeBreakTimeRange', ({ body }) => {
   persist()
   return ok({ data: stored, message: 'زمان استراحت با موفقیت ذخیره شد' })
 })
+// Generic :key catch-alls — first matching route wins, so handlers for
+// specific keys (e.g. employeeBreakTimeRange above) must stay ABOVE these.
 on('get', 'v1/setting/general/([a-zA-Z0-9_-]+)', ({ match }) =>
   ok({ data: settingsStore()[`general.${match[1]}`] ?? {} })
 )
@@ -736,6 +738,9 @@ const ADVISOR_MODULES = new Set([
 ])
 const defaultRoleAcl = (roleId) => {
   const role = findById('roles', roleId)
+  // Unknown role id — nothing to derive a profile from; expose an empty set
+  // instead of masking the miss with a fully-formed default.
+  if (!role) return { id: Number(roleId), permissions: aclPermissions(), modules: [] }
   const profile =
     role?.slug === 'manager' ? 'manager' : role?.slug === 'advisor' ? 'advisor' : 'minimal'
   const allowedActions =
@@ -785,31 +790,34 @@ on('post', 'acl/role', ({ body }) => {
   return ok({ data: item })
 })
 on('put', String.raw`acl/role/(\d+)`, ({ match, body }) => {
-  const readableModules = (body?.modules ?? []).map((sent) => {
-    const meta = moduleById(sent.module_id ?? sent.moduleId) ?? {}
-    const permissions = emptyPermissions()
-    ;(sent.permissions ?? []).forEach((sentPermission) => {
-      const permission = permissionById(sentPermission.permission_id ?? sentPermission.permissionId)
-      if (permission) permissions[permission.key] = sentPermission.access ?? null
+  const readableModules = (body?.modules ?? [])
+    .map((sent) => {
+      const meta = moduleById(sent.module_id ?? sent.moduleId)
+      if (!meta) return null // unknown module id — drop instead of storing a blank row
+      const permissions = emptyPermissions()
+      ;(sent.permissions ?? []).forEach((sentPermission) => {
+        const permission = permissionById(
+          sentPermission.permission_id ?? sentPermission.permissionId
+        )
+        if (permission) permissions[permission.key] = sentPermission.access ?? null
+      })
+      return {
+        id: meta.id,
+        key: meta.key,
+        title: meta.title,
+        parent_id: meta.parent_id ?? null,
+        has_access: sent.has_access ?? sent.hasAccess ?? false,
+        hidden: sent.hidden ?? false,
+        permissions,
+      }
     })
-    return {
-      id: meta.id,
-      key: meta.key,
-      title: meta.title,
-      parent_id: meta.parent_id ?? null,
-      has_access: sent.has_access ?? sent.hasAccess ?? false,
-      hidden: sent.hidden ?? false,
-      permissions,
-    }
-  })
+    .filter(Boolean)
   const stored = {
     id: Number(match[1]),
     permissions: aclPermissions(),
     modules: readableModules,
   }
   settingsStore()[`acl.role.${match[1]}`] = stored
-  const role = findById('roles', match[1])
-  if (role && body?.title) role.title = body.title
   persist()
   return ok({ data: stored })
 })
