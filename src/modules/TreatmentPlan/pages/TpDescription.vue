@@ -122,6 +122,7 @@
     </QCard>
   </div>
   <AudioRecorder
+    ref="audioRecorderRef"
     :recordable="!!selectedBookingId"
     :voices="[]"
     :show-players="false"
@@ -213,7 +214,7 @@ import {
   transformApiResponseToTableFormat,
 } from '@/modules/TreatmentPlan/utils/tp-description-transformers'
 import { teethMapping } from '@/modules/TreatmentPlan/constants/teeth'
-import { convertToJalali, convertToJalaliWithTime, formatDate } from '@/utils/date-utils'
+import { convertToJalali, formatDate } from '@/utils/date-utils'
 import { getPerms } from '@/utils/get-perms'
 import UserTpCard from '@/modules/TreatmentPlan/components/TpDescription/UserTpDetails/UserTpCard'
 import SelectField from '@/base/SelectField'
@@ -221,12 +222,13 @@ import TreatmentSessionCard from '@/modules/TreatmentPlan/components/TpDescripti
 import AudioRecorder from '@/components/AudioRecorder'
 import { request } from '@/data/services'
 import { handleError } from '@/utils/error-handler'
-import {
-  getRecordingRecovery,
-  clearRecordingRecovery,
-  buildRecoveredFilePayload,
-} from '@/utils/recording-recovery'
+import { getRecordingRecovery, clearRecordingRecovery } from '@/utils/recording-recovery'
 import { useRecordingReminders } from '@/modules/TreatmentPlan/composables/use-recording-reminders'
+import {
+  autoSaveRecoveredEntry,
+  VOICE_KINDS,
+} from '@/modules/TreatmentPlan/composables/use-voice-auto-save'
+import { useVoiceLeaveSave } from '@/modules/TreatmentPlan/composables/use-voice-leave-save'
 
 const TpAddDescriptionDialog = defineAsyncComponent(
   () => import('../components/TpDescription/TpAddDescriptionDialog')
@@ -270,6 +272,8 @@ const isVoiceRecording = ref(false)
 const onRecordingChange = (recording) => {
   isVoiceRecording.value = recording
 }
+
+const userId = computed(() => data.value?.user?.id)
 
 const shouldBlockClose = computed(() => isUploadingVoice.value || isVoiceRecording.value)
 
@@ -322,6 +326,9 @@ const { mutate: attachBookingVoice, isPending: attachVoicePending } = useAttachB
         queryClient.invalidateQueries({
           queryKey: ['booking-voices', selectedBookingId.value],
         })
+      }
+      if (userId.value) {
+        clearRecordingRecovery(`booking-voice-${userId.value}`)
       }
     },
   }
@@ -379,37 +386,37 @@ const onSaveVoiceFile = (fileData) => {
   )
 }
 
-// Crash-recovery key for booking voice recordings (per patient). The
-// AudioRecorder freezes the config at recording start, so a mid-recording
-// booking change never corrupts the persisted snapshot.
-const userId = computed(() => data.value?.user?.id)
-
 const bookingVoiceRecovery = computed(() => {
   if (!userId.value) return null
   return {
     key: `booking-voice-${userId.value}`,
-    context: { bookingId: selectedBookingId.value },
+    context: { kind: VOICE_KINDS.BOOKING, bookingId: selectedBookingId.value },
   }
 })
 
-// On load, offer to upload a recording that was interrupted by a tab close /
-// browser crash / shutdown (persisted in IndexedDB by AudioRecorder).
+// Save the in-progress recording BEFORE leaving the page (route change):
+// finalize + upload + attach happen while this page is still alive.
+const audioRecorderRef = ref(null)
+useVoiceLeaveSave({
+  recorderRef: audioRecorderRef,
+  getRecoveryKey: () => bookingVoiceRecovery.value?.key ?? null,
+  // Own upload/attach in flight? It completes on its own and clears the
+  // entry on success — the leave guard must not retry it (duplicate voice).
+  isUploadPending: () =>
+    isUploadingVoice.value || isVoiceUploadPending.value || attachVoicePending.value,
+})
+
 const recoverInterruptedRecording = async () => {
   if (!userId.value) return
 
   const key = `booking-voice-${userId.value}`
   const recovered = await getRecordingRecovery(key)
-  await clearRecordingRecovery(key)
-  if (!recovered?.blob || recovered.blob.size === 0) return
+  if (!recovered?.blob || recovered.blob.size === 0) {
+    await clearRecordingRecovery(key)
+    return
+  }
 
-  const savedAtJalali = convertToJalaliWithTime(new Date(recovered.savedAt || Date.now()))
-  confirmDialog(
-    'ذخیره ضبط ناتمام',
-    `ضبط صوتی ناتمامی از این بیمار پیدا شد (${savedAtJalali}). ذخیره شود؟`,
-    () => {
-      onSaveVoiceFile(buildRecoveredFilePayload(recovered))
-    }
-  )
+  await autoSaveRecoveredEntry(key, recovered)
 }
 
 watch(

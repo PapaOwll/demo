@@ -222,6 +222,5 @@ export const useGetPatientsWithoutChequeCountQuery = (options = {}) =>
     queryKey: ['booking', 'patients-without-cheque-count'],
     queryFn: ({ signal }) => apiGetPatientsWithoutChequeCount({ signal }),
     select: (data) => data?.data ?? 0,
-    refetchInterval: 60_000,
     ...options,
   })

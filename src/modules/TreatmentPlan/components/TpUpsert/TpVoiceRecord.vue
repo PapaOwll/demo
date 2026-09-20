@@ -1,14 +1,17 @@
 <template>
   <div class="tpv">
     <QCardActions class="tpv__top" @click.self="expanded = !expanded">
-      <span @click="expanded = !expanded">یادداشت متخصصان</span>
+      <Typography variant="body" size="4" @click="expanded = !expanded">یادداشت متخصصان</Typography>
       <QSpace />
-      <QBtn
+      <Button
+        variant="flat"
         color="grey"
-        round
-        flat
-        dense
-        :icon="expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'"
+        size="sm"
+        is-icon-only
+        is-rounded
+        :is-link="false"
+        :left-icon="expanded ? IconChevronUp : IconChevronDown"
+        aria-label="باز و بسته کردن بخش یادداشت متخصصان"
         @click="expanded = !expanded"
       />
     </QCardActions>
@@ -27,6 +30,7 @@
 
         <AudioRecorder
           v-show="mode !== TREATMENT_PLAN_MODE.DRAFT"
+          ref="audioRecorderRef"
           :voices="allVoices || []"
           :external-loading="isPending || uploadVoicePending"
           :recording-reminders="recordingReminders"
@@ -66,23 +70,22 @@
 
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { IconChevronDown, IconChevronUp } from '@tabler/icons-vue'
 import AudioRecorder from '@/components/AudioRecorder'
 import Typography from '@/base/Typography'
+import Button from '@/base/Button'
 import { useTpProvider } from '../../composables/use-tp-provider'
 import { request } from '@/data/services'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { handleError } from '@/utils/error-handler'
-import { Notif, confirmDialog } from '@/data/services/notification-service'
-import {
-  getRecordingRecovery,
-  clearRecordingRecovery,
-  buildRecoveredFilePayload,
-} from '@/utils/recording-recovery'
-import { convertToJalaliWithTime } from '@/utils/date-utils'
+import { Notif } from '@/data/services/notification-service'
+import { getRecordingRecovery, clearRecordingRecovery } from '@/utils/recording-recovery'
 import { useUploadTpVoiceMutation } from '@/modules/TreatmentPlan/query'
 import { useTpVoice } from '../../composables/use-tp-voice'
 import { useTpStatus } from '@/modules/TreatmentPlan/composables/use-tp-status'
 import { useRecordingReminders } from '../../composables/use-recording-reminders'
+import { autoSaveRecoveredEntry, VOICE_KINDS } from '../../composables/use-voice-auto-save'
+import { useVoiceLeaveSave } from '../../composables/use-voice-leave-save'
 import { TREATMENT_PLAN_MODE } from '@/modules/TreatmentPlan/constants/enums'
 
 const { treatmentData, updateTreatment } = useTpProvider(['treatmentData', 'updateTreatment'])
@@ -92,28 +95,21 @@ const { mode } = useTpStatus()
 const expanded = ref(true)
 const queryClient = useQueryClient()
 
-// Upload progress state
 const uploadProgress = ref(0)
 const isUploading = ref(false)
 const uploadCompleted = ref(false)
 const isRecording = ref(false)
 
-// Handle recording state change from AudioRecorder
 const onRecordingChange = (recording) => {
   isRecording.value = recording
 }
 
-// Crash-recovery key for treatment-plan voice recordings. Only enabled when
-// the treatment plan already exists server-side — a recovered recording must
-// have an entity to be attached to. (For not-yet-created TPs the pending-
-// voice flow applies and recovery is not possible.)
 const tpVoiceRecovery = computed(() => {
   const tpId = treatmentData?.value?.id
   if (!tpId) return null
-  return { key: `tp-voice-${tpId}`, context: { tpId } }
+  return { key: `tp-voice-${tpId}`, context: { kind: VOICE_KINDS.TP, tpId } }
 })
 
-// Check if we should block page close
 const shouldBlockClose = computed(() => isUploading.value || isRecording.value)
 
 function handleBeforeUnload(e) {
@@ -122,8 +118,6 @@ function handleBeforeUnload(e) {
       ? 'در حال ضبط صدا هستید. آیا مطمئن هستید که می‌خواهید صفحه را ببندید؟'
       : 'لطفا برای بستن صفحه، تا زمان تکمیل بارگذاری صدای ضبط شده صبر کنید.'
     e.preventDefault()
-    // Note: Modern browsers ignore custom messages and show their own generic message
-    // The Persian message is set but browsers will show their default message
     e.returnValue = message
   }
 }
@@ -136,7 +130,6 @@ watch(shouldBlockClose, (newValue) => {
   }
 })
 
-// Cleanup on unmount
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
 })
@@ -176,6 +169,7 @@ const { mutate: uploadVoice, isPending: uploadVoicePending } = useUploadTpVoiceM
       queryClient.invalidateQueries({
         queryKey: ['new-treatment-plan', 'treatment', treatmentPlanId],
       })
+      clearRecordingRecovery(`tp-voice-${treatmentPlanId}`)
     }
 
     if (treatmentPlanKey) {
@@ -184,6 +178,17 @@ const { mutate: uploadVoice, isPending: uploadVoicePending } = useUploadTpVoiceM
       })
     }
   },
+})
+
+// Save the in-progress recording BEFORE leaving the page (route change):
+// finalize + upload + attach happen while this page is still alive.
+const audioRecorderRef = ref(null)
+useVoiceLeaveSave({
+  recorderRef: audioRecorderRef,
+  getRecoveryKey: () => tpVoiceRecovery.value?.key ?? null,
+  // Own upload/attach in flight? It completes on its own and clears the
+  // entry on success — the leave guard must not retry it (duplicate voice).
+  isUploadPending: () => isUploading.value || isPending.value || uploadVoicePending.value,
 })
 const uploadTpVoice = (uploadData, fileData) => {
   if (!uploadData || !uploadData[0]?.id) return
@@ -200,7 +205,6 @@ const uploadTpVoice = (uploadData, fileData) => {
 const onSaveFile = (fileData) => {
   if (!fileData || !fileData.file) return
 
-  // Reset states
   uploadProgress.value = 0
   isUploading.value = true
   uploadCompleted.value = false
@@ -221,7 +225,6 @@ const onSaveFile = (fileData) => {
         isUploading.value = false
         uploadCompleted.value = true
 
-        // Hide the success message after 3 seconds
         setTimeout(() => {
           uploadCompleted.value = false
         }, 3000)
@@ -247,26 +250,18 @@ const onSaveFile = (fileData) => {
   )
 }
 
-// On load, offer to upload a recording interrupted by tab close / crash /
-// connection loss (persisted in IndexedDB by AudioRecorder). The entry is
-// cleared immediately after reading, so the next recording starts clean.
 const recoverInterruptedRecording = async () => {
   const tpId = treatmentData?.value?.id
   if (!tpId) return
 
   const key = `tp-voice-${tpId}`
   const recovered = await getRecordingRecovery(key)
-  await clearRecordingRecovery(key)
-  if (!recovered?.blob || recovered.blob.size === 0) return
+  if (!recovered?.blob || recovered.blob.size === 0) {
+    await clearRecordingRecovery(key)
+    return
+  }
 
-  const savedAtJalali = convertToJalaliWithTime(new Date(recovered.savedAt || Date.now()))
-  confirmDialog(
-    'ذخیره ضبط ناتمام',
-    `ضبط صوتی ناتمامی برای این طرح درمان پیدا شد (${savedAtJalali}). ذخیره شود؟`,
-    () => {
-      onSaveFile(buildRecoveredFilePayload(recovered))
-    }
-  )
+  await autoSaveRecoveredEntry(key, recovered)
 }
 
 watch(

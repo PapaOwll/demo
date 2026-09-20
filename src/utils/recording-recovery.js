@@ -1,12 +1,3 @@
-/**
- * Crash-recovery persistence for in-progress voice recordings.
- *
- * While the user is recording, AudioRecorder periodically persists the
- * partial audio (as a Blob) into IndexedDB — which survives tab close,
- * browser crash and OS shutdown. On the next app load the consumer checks
- * for a leftover recording under its key and re-uploads it through the
- * normal `v1/file/upload` flow.
- */
 const DB_NAME = 'sitra-crm'
 const DB_VERSION = 1
 const STORE_NAME = 'recording-recovery'
@@ -53,8 +44,6 @@ const withStore = async (mode, executor) => {
 }
 
 /**
- * Persists (overwrites) the partial recording stored under `key`.
- *
  * @param {string} key - consumer-scoped key, e.g. `booking-voice-12`
  * @param {object} record
  * @param {Blob} record.blob - partial audio captured so far
@@ -68,8 +57,6 @@ export const saveRecordingRecovery = (key, { blob, mimeType, context, savedAt })
   )
 
 /**
- * Returns the persisted partial recording for `key`, or `null`.
- *
  * @returns {Promise<{blob: Blob, mimeType: string, context: object, savedAt: number}|null>}
  */
 export const getRecordingRecovery = async (key) => {
@@ -81,18 +68,38 @@ export const getRecordingRecovery = async (key) => {
   }
 }
 
-/**
- * Removes the persisted recording for `key` (called after a successful
- * stop/save, a cancel, or after the recovered file has been handed off).
- */
 export const clearRecordingRecovery = (key) =>
   withStore('readwrite', (store) => store.delete(key)).catch(() => {})
 
 /**
- * Builds the `save`-event payload for a recovered recording, in the same
- * shape AudioRecorder emits for a normal stop — so consumers can hand it
- * straight to their existing upload handler.
- *
+ * @returns {Promise<Array<{key: string, blob: Blob, mimeType: string, context: object, savedAt: number}>>}
+ */
+export const getAllRecordingRecoveries = async () => {
+  try {
+    const db = await openDb()
+    return await new Promise((resolve, reject) => {
+      const entries = []
+      const transaction = db.transaction(STORE_NAME, 'readonly')
+      const request = transaction.objectStore(STORE_NAME).openCursor()
+
+      request.addEventListener('success', () => {
+        const cursor = request.result
+        if (cursor) {
+          entries.push({ key: cursor.key, ...cursor.value })
+          cursor.continue()
+        } else {
+          resolve(entries)
+        }
+      })
+      transaction.addEventListener('error', () => reject(transaction.error))
+      transaction.addEventListener('abort', () => reject(transaction.error))
+    })
+  } catch {
+    return []
+  }
+}
+
+/**
  * @param {object} recovered - record returned by `getRecordingRecovery`
  * @returns {{file: File, name: string, size: number, type: string, uploadType: string, lastModified: number}}
  */

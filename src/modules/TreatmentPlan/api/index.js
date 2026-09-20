@@ -62,8 +62,8 @@ export const apiGetTreatmentPlanDescription = (tpId, filters) =>
 export const apiDeleteTpDescription = (tpdId, itemId) =>
   request.delete(`v2/treatment-plan/${tpdId}/perform/items/${itemId}`)
 
-export const apiUploadTpVoice = (id, data) =>
-  request.post(`v1/treatment-plan/${id}/voice`, data, { hadSnakize: true })
+export const apiUploadTpVoice = (id, data, config) =>
+  request.post(`v1/treatment-plan/${id}/voice`, data, { hadSnakize: true, ...config })
 
 export const apiGetTreatmentPlanCredit = (treatmentPlanId, data) =>
   request.post(`v2/treatment-plan/${treatmentPlanId}/credit`, data, { hadSnakize: true })
@@ -121,7 +121,7 @@ export const apiCalculateCouponCode = (data) =>
 
 export const apiGetTreatmentPlanBookings = (params) => request.get('v1/booking', { params })
 
-export const apiAttachBookingVoice = (bookingId, data) =>
-  request.post(`v2/booking/${bookingId}/voice`, data, { hadSnakize: true })
+export const apiAttachBookingVoice = (bookingId, data, config) =>
+  request.post(`v2/booking/${bookingId}/voice`, data, { hadSnakize: true, ...config })
 
 export const apiGetBookingServes = (bookingId) => request.get(`v2/booking/${bookingId}/serves`)

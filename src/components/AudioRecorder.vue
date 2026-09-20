@@ -160,6 +160,24 @@ const fileUploadRef = ref(null)
 const shouldUploadAfterStop = ref(false)
 const isCanceling = ref(false)
 
+// Route-leave save: when the recording is finalized for navigation,
+// handleRecordingStop must skip the local decode + `save` emit (the leave
+// save flow uploads the persisted recovery entry itself) and only clean up.
+const isFinalizingForLeave = ref(false)
+// Set when the leave-save flow abandoned (timed out on) a finalize: a
+// late-firing stop event must not re-persist the recovery entry the flow
+// already saved and cleared (would resurrect a duplicate).
+let leaveSaveAbandoned = false
+const stopWaiters = []
+
+const waitForRecordingStop = () =>
+  new Promise((resolve) => {
+    stopWaiters.push(resolve)
+  })
+const resolveStopWaiters = () => {
+  stopWaiters.splice(0).forEach((resolve) => resolve())
+}
+
 // Crash-recovery persistence state (frozen for the whole recording session)
 const RECOVERY_INTERVAL_MS = 3000
 let recoveryConfig = null
@@ -393,7 +411,6 @@ const downloadIndividualFile = (file) => {
 }
 
 const onPlayerPlay = (file) => {
-  // Pause all other players
   playerRefs.value.forEach((player, id) => {
     if (id !== file.id && player?.pause) {
       player.pause()
@@ -468,8 +485,6 @@ const stopPitchDetection = () => {
   }
 }
 
-// --- Crash-recovery persistence ---
-
 const clearRecoveryTimer = () => {
   if (recoveryTimer) {
     clearInterval(recoveryTimer)
@@ -477,23 +492,23 @@ const clearRecoveryTimer = () => {
   }
 }
 
+// Returns the persistence promise so callers that need the snapshot durably
+// written before continuing (route-leave save) can await it. Interval and
+// pagehide/offline listener callers keep ignoring it (best-effort).
 const persistRecoverySnapshot = () => {
-  if (!recoveryConfig || !isRecording.value || recordedChunks.value.length === 0) return
+  if (!recoveryConfig || recordedChunks.value.length === 0) return Promise.resolve()
 
   const mimeType = mediaRecorder.value?.mimeType || 'audio/webm'
   const blob = new Blob(recordedChunks.value, { type: mimeType })
-  if (blob.size === 0) return
+  if (blob.size === 0) return Promise.resolve()
 
-  saveRecordingRecovery(recoveryConfig.key, {
+  return saveRecordingRecovery(recoveryConfig.key, {
     blob,
     mimeType,
     context: recoveryConfig.context,
   }).catch(() => {})
 }
 
-// Internet dropped mid-recording: the upload paths are dead until reconnect,
-// so make sure the partial audio is safely on disk right away — it will be
-// offered for recovery (or uploaded on stop) once the connection is back.
 const handleRecordingOffline = () => {
   if (!isRecording.value) return
   persistRecoverySnapshot()
@@ -531,6 +546,17 @@ const handleRecordingStop = async () => {
       return
     }
 
+    if (isFinalizingForLeave.value) {
+      // Route-leave finalization owns upload + attach (from the recovery
+      // entry) — skip the decode + `save` emit to avoid a duplicate upload.
+      // The snapshot is awaited so navigation continues only after the full
+      // recording is durably persisted. Skipped when that flow already gave
+      // up on this finalize (timeout) and saved the last interval snapshot —
+      // writing here would resurrect the entry it just cleared.
+      if (!leaveSaveAbandoned) await persistRecoverySnapshot()
+      return
+    }
+
     if (!recordedChunks.value || recordedChunks.value.length === 0) {
       return
     }
@@ -542,6 +568,10 @@ const handleRecordingStop = async () => {
     if (blob.size === 0) {
       return
     }
+
+    // Final snapshot with everything captured so far — if the consumer's
+    // upload/attach fails, the sweep can still auto-save the full recording.
+    persistRecoverySnapshot()
 
     const recordingName = `recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`
     await addAudioFile(blob, { suggestedName: recordingName, uploadType: 'recorded' })
@@ -576,12 +606,14 @@ const handleRecordingStop = async () => {
   } catch (error) {
     handleError(error)
   } finally {
-    // The recording ended in-page (saved or canceled) — the recovery
-    // snapshot is no longer needed.
-    stopRecoveryPersistence(true)
+    // Cancel = intentional discard → clear the entry. Save → keep it until
+    // the consumer confirms upload + attach succeeded (the consumer clears
+    // it then); if that upload fails, the app-start sweep auto-saves it.
+    stopRecoveryPersistence(isCanceling.value)
     cleanupStream()
     isProcessing.value = false
     isCanceling.value = false
+    resolveStopWaiters()
   }
 }
 
@@ -666,6 +698,65 @@ const cancelRecording = () => {
     recordedChunks.value = []
   }
 }
+
+/**
+ * Route-leave save entry point: stops an in-progress recording and resolves
+ * only after the FULL recording is durably persisted to the recovery store
+ * (IndexedDB). The caller (useVoiceLeaveSave) then uploads + attaches it via
+ * autoSaveRecoveredEntry while the page is still alive. Returns true when a
+ * recording was finalized, false when nothing was in progress.
+ */
+const finalizeRecordingForLeave = async () => {
+  if (!isRecording.value || !mediaRecorder.value) return false
+
+  leaveSaveAbandoned = false
+  isFinalizingForLeave.value = true
+  isProcessing.value = true
+
+  try {
+    if (mediaRecorder.value.state === 'recording') {
+      const stopDone = waitForRecordingStop()
+      try {
+        // Flush the not-yet-delivered audio into recordedChunks before stop.
+        mediaRecorder.value.requestData()
+        mediaRecorder.value.stop()
+      } catch (error) {
+        handleError(error)
+      }
+      await stopDone
+    } else {
+      // Recorder already inactive (errored earlier): persist what exists.
+      await persistRecoverySnapshot()
+    }
+
+    isRecording.value = false
+    stopElapsedTimer()
+    stopPitchDetection()
+
+    return true
+  } finally {
+    isFinalizingForLeave.value = false
+    isProcessing.value = false
+  }
+}
+
+/**
+ * Marks an in-flight finalizeRecordingForLeave as abandoned (guard timeout).
+ * A late-firing stop event must not re-persist the recovery entry after the
+ * leave-save flow already saved and cleared it. Timers are stopped here
+ * because the abandoned finalize's own cleanup may never run.
+ */
+const abandonRecordingFinalize = () => {
+  leaveSaveAbandoned = true
+  stopElapsedTimer()
+  stopPitchDetection()
+}
+
+defineExpose({
+  finalizeRecordingForLeave,
+  abandonRecordingFinalize,
+  isRecording,
+})
 
 const onUploadFromQFile = async (files) => {
   const fileList = Array.isArray(files) ? files : [files]
@@ -798,12 +889,15 @@ watch(isRecording, (recording) => {
 onBeforeUnmount(() => {
   // Best-effort save of the partial recording if unmounted mid-recording
   // (route change / page teardown): upload whatever was captured so far.
-  if (isRecording.value && recordedChunks.value.length > 0) {
+  // Skipped when a route-leave finalization is (still) in flight — that flow
+  // uploads from the persisted recovery entry and a second emit here would
+  // duplicate the upload.
+  if (isRecording.value && recordedChunks.value.length > 0 && !isFinalizingForLeave.value) {
     try {
       // Final snapshot BEFORE the emit: the interval snapshots plus this
       // one bound the data loss to ~RECOVERY_INTERVAL_MS. The snapshot is
-      // cleared after the emit — a browser death during the subsequent
-      // upload is guarded by the consumer's beforeunload warning.
+      // kept after the emit — if the upload fails or the browser dies
+      // mid-upload, the app-start sweep auto-saves it on the next open.
       persistRecoverySnapshot()
 
       const blob = new Blob(recordedChunks.value, {
@@ -823,7 +917,10 @@ onBeforeUnmount(() => {
           uploadType: 'recorded',
           lastModified: namedFile.lastModified,
         })
-        stopRecoveryPersistence(true)
+        // Keep the entry: the consumer uploads now (page is alive) and
+        // clears it on success. If that upload fails, the app-start sweep
+        // auto-saves the snapshot instead.
+        stopRecoveryPersistence(false)
       }
     } catch (error) {
       handleError(error)

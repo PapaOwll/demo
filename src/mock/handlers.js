@@ -596,9 +596,10 @@ on('post', 'v1/file/upload', async ({ body }) => {
     const file = entries['files[0][file]']
     const type = entries['files[0][type]'] || 'user.docs'
     const entityId = Number(entries.entity_id) || null
-    // Booking voices are attached by file id via v2/booking/{id}/voice right
-    // after upload, so a missing entity_id is expected for that flow.
-    if (entityId === null && type !== 'booking.voice') {
+    // Booking / treatment-plan voices are attached by file id via their own
+    // attach endpoints right after upload, so a missing entity_id is expected
+    // for those flows.
+    if (entityId === null && type !== 'booking.voice' && type !== 'treatment-plan.voice') {
       // eslint-disable-next-line no-console
       console.warn('[mock] file/upload without entity_id — row will be orphaned')
     }
@@ -1500,7 +1501,29 @@ on('post', String.raw`v1/treatment-plan/financial/\d+/(confirmation|extradition)
 )
 on('post', 'v1/treatment-plan/cheques/calculate', () => ok({ data: [] }))
 on('post', String.raw`v1/treatment-plan/transfer/\d+/\d+`, () => ok({ data: { success: true } }))
-on('post', String.raw`v1/treatment-plan/(\d+)/(voice|file)`, () => ok({ data: { success: true } }))
+// TP voices (voice-auto-save port): resolve uploaded file ids onto the
+// treatment-plan row so auto-saved recordings survive reloads. The `file`
+// variant of this route has no read-back UI — plain success stub.
+on('post', String.raw`v1/treatment-plan/(\d+)/(voice|file)`, ({ match, body }) => {
+  if (match[2] !== 'voice') return ok({ data: { success: true } })
+  const plan = findById('treatmentPlans', match[1])
+  if (!plan) return { status: 404, body: { message: 'طرح درمان یافت نشد' } }
+  plan.voices = Array.isArray(plan.voices) ? plan.voices : []
+  ;(body?.voices || []).forEach((v) => {
+    const file = findById('files', v?.id)
+    if (!file || plan.voices.some((existing) => String(existing.id) === String(file.id))) return
+    plan.voices.push({
+      id: file.id,
+      path: file.path,
+      name: file.name,
+      duration: v?.duration ?? 0,
+      type: v?.type ?? file.type,
+      created_at: file.created_at || nowStr(),
+    })
+  })
+  persist()
+  return ok({ data: { voices: plan.voices }, message: 'ذخیره سازی صدا با موفقیت انجام شد.' })
+})
 on('get', 'v1/doctor-reviews', ({ params }) => ok(listEnvelope([], params)))
 
 // v2 treatment-plan (drafts & perform)
