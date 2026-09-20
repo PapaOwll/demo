@@ -93,7 +93,13 @@
       <div class="row q-pa-md">
         <ul>
           <li v-for="item in results" :key="item.id" class="q-my-sm full-width">
-            {{ JSON.stringify(item.response) }}
+            <div v-for="(value, key) in item.response" :key="key" class="q-my-xs">
+              <template v-if="typeof value === 'number'">
+                {{ key }}:
+                <QBadge color="primary">امتیاز: {{ value }} از ۱۰</QBadge>
+              </template>
+              <template v-else>{{ key }}: {{ value }}</template>
+            </div>
           </li>
         </ul>
       </div>

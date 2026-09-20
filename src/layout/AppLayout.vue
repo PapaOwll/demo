@@ -51,7 +51,6 @@ import AnnouncementBanner from './components/AnnouncementBanner'
 import RouterTransition from './components/RouterTransition'
 import { useCrmAnnouncements } from '@/layout/composables/use-crm-announcements'
 
-// DEV: تست نوار آپدیت - فقط در محیط development
 if (import.meta.env.DEV) {
   // eslint-disable-next-line no-underscore-dangle
   window.__testUpdateBar = () => {
@@ -60,12 +59,10 @@ if (import.meta.env.DEV) {
   }
 }
 
-// dependencies
 const userStore = useUserStore()
 const route = useRoute()
 const { userData } = storeToRefs(userStore)
 
-// state
 const userDetailsVisible = ref(false)
 const selectedUserId = ref(null)
 const rightDrawerOpen = ref(true)
@@ -74,7 +71,6 @@ const pageContainerRef = ref(null)
 const { headerAnnouncements, modalAnnouncement, shouldShowModal, dismissAnnouncement } =
   useCrmAnnouncements()
 
-// computed
 const filteredSubModules = computed(
   () =>
     userData?.value?.role?.modules
@@ -102,7 +98,6 @@ const currentPageName = computed(() => {
   return currentSubModule?.title || currentModule?.title || 'داشبورد'
 })
 
-// methods
 const handleUserSelected = (userId) => {
   selectedUserId.value = userId
   if (!userId) return
@@ -117,7 +112,6 @@ const closeUserDetails = () => {
   userDetailsVisible.value = false
 }
 
-// Reset scroll position when route changes
 watch(
   () => route.path,
   async () => {

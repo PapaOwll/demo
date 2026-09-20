@@ -55,15 +55,7 @@
         </div>
 
         <div v-else-if="getQuestionType(question) === 'number'">
-          <QRating
-            v-model="answers[question.key]"
-            :max="question.max ?? 10"
-            icon="star_border"
-            icon-selected="star"
-            icon-half="star_half"
-            color="primary"
-            size="3em"
-          />
+          <NumericScoreInput v-model="answers[question.key]" :max="question.max ?? 10" />
         </div>
 
         <div v-else>
@@ -123,6 +115,7 @@ import Button from '@/base/Button'
 import Radio from '@/base/Radio'
 import TextField from '@/base/TextField'
 import Typography from '@/base/Typography'
+import NumericScoreInput from '@/components/Form/NumericScoreInput'
 import noData from '@/assets/images/noData.svg'
 
 const emits = defineEmits(['close', 'submitted'])
@@ -145,12 +138,9 @@ const {
   refetch: refetchQuestions,
 } = useGetFollowUpsSurvey(taskId, {
   enabled: () => visible.value && !!taskId.value,
-  // A 404 is definitive — the survey does not exist for this task — so
-  // auto-retrying it (like a transient 5xx/network error) is pointless.
   retry: (failureCount, error) => error?.response?.status !== 404 && failureCount < 1,
 })
 
-// 404 = survey not registered for this task (not a transient failure).
 const isSurveyNotFound = computed(() => questionsError.value?.response?.status === 404)
 
 const isRetryableSurveyError = computed(() => isQuestionsError && !isSurveyNotFound.value)
