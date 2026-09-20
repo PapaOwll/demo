@@ -16,10 +16,10 @@
         v-for="number in max"
         :key="number"
         class="numeric-score-input__label"
-        :class="{ 'numeric-score-input__label--active': modelValue === number + min - 1 }"
-        @click="emit('update:modelValue', number + min - 1)"
+        :class="{ 'numeric-score-input__label--active': modelValue === number }"
+        @click="emit('update:modelValue', number)"
       >
-        {{ number + min - 1 }}
+        {{ number }}
       </span>
     </div>
   </div>
@@ -34,10 +34,6 @@ defineProps({
   max: {
     type: Number,
     default: 10,
-  },
-  min: {
-    type: Number,
-    default: 1,
   },
 })
 

@@ -96,7 +96,9 @@
             <div v-for="(value, key) in item.response" :key="key" class="q-my-xs">
               <template v-if="typeof value === 'number'">
                 {{ key }}:
-                <QBadge color="primary">امتیاز: {{ value }} از ۱۰</QBadge>
+                <!-- سوالات عددی سوال‌نامه‌های دمو max متفاوتی دارند (۵ و ۱۰)؛
+                     response فقط مقدار را دارد، پس بیشینه را نشان نمی‌دهیم -->
+                <QBadge color="primary">امتیاز: {{ value }}</QBadge>
               </template>
               <template v-else>{{ key }}: {{ value }}</template>
             </div>

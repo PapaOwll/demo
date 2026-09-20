@@ -90,7 +90,12 @@ export const autoSaveRecoveredEntry = async (key, record, { notify = true } = {}
   pendingKeys.add(key)
   try {
     const fresh = await getRecordingRecovery(key)
-    if (!fresh?.blob || fresh.blob.size === 0) return false
+    if (!fresh?.blob || fresh.blob.size === 0) {
+      // Stale/empty entry (e.g. written 0-byte by a crashed session) — clear
+      // it so the app-start sweep doesn't retry it on every launch forever.
+      await clearRecordingRecovery(key)
+      return false
+    }
 
     const kind = resolveKind(key, fresh.context)
     const context = fresh.context || {}
