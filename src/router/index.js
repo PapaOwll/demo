@@ -34,6 +34,12 @@ const newRoutes = [
   ...attendanceRoutes,
   // ...priceCalculatorRoutes,
   {
+    path: '/403',
+    name: 'forbidden',
+    component: () => import('@/components/ForbiddenPage'),
+    meta: { layout: 'AppLayout', isPublic: false },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'notFound',
     component: () => import('@/components/NotFoundPage'),

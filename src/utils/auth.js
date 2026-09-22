@@ -41,10 +41,16 @@ export const handleSuccessLogin = (token) => {
   localStorage.setItem(ACCESS_TOKEN_KEY, token)
 }
 
+const FORBIDDEN_MESSAGE_KEY = 'auth:403-message'
+
 export const handleAccessDenied = (e) => {
   if (!hasAccessToken()) return
   handleError(e)
-  window.location.href = `${window.location.origin}/tasks`
+  // Prevent redirect loop when the 403 page's own requests are denied
+  if (window.location.pathname === '/403') return
+  const backendMessage = e?.response?.data?.message
+  if (backendMessage) sessionStorage.setItem(FORBIDDEN_MESSAGE_KEY, backendMessage)
+  window.location.href = `${window.location.origin}/403`
 }
 
 export const handleUnauthorizedAccess = (e) => {
