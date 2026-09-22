@@ -279,7 +279,7 @@
             variant="outline"
             clearable
             :options="implantNeededTeethOptions"
-            label="حدس تعداد پایه ایمپلنت"
+            label="تعداد پایه ایمپلنت اعلامی بیمار"
             :disable="isUserInfoFieldDisabled"
             :model-value="userData.implantNeededTeeth ?? null"
             :error="!!errors?.implantNeededTeeth"
