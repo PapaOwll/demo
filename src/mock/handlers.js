@@ -1745,7 +1745,8 @@ on('post', String.raw`v2/treatment-plan/(\d+)/credit`, () => ok({ data: { succes
 // Financial discount registration (FinancialDetailsDialog) — persisted on the
 // plan row so the credit-total summary reflects it until the user changes it.
 on('post', 'v1/financial/discount', ({ body }) => {
-  const planId = body?.treatmentplanId ?? body?.treatmentPlanId
+  // apiCreateFinancialDiscount sends hadSnakize bodies → treatmentplan_id
+  const planId = body?.treatmentplan_id ?? body?.treatmentplanId ?? body?.treatmentPlanId
   const plan = findById('treatmentPlans', planId)
   if (!plan) return ok({ data: { success: false }, message: 'طرح درمان یافت نشد' })
   const amount = Number(body?.amount) || 0
