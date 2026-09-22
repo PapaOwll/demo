@@ -1742,8 +1742,20 @@ on('delete', String.raw`v2/treatment-plan/(\d+)/perform/items/(\d+)`, ({ match }
   return ok({ data: { success: true }, message: 'شرح درمان با موفقیت حذف شد' })
 })
 on('post', String.raw`v2/treatment-plan/(\d+)/credit`, () => ok({ data: { success: true } }))
+// Financial discount registration (FinancialDetailsDialog) — persisted on the
+// plan row so the credit-total summary reflects it until the user changes it.
+on('post', 'v1/financial/discount', ({ body }) => {
+  const planId = body?.treatmentplanId ?? body?.treatmentPlanId
+  const plan = findById('treatmentPlans', planId)
+  if (!plan) return ok({ data: { success: false }, message: 'طرح درمان یافت نشد' })
+  const amount = Number(body?.amount) || 0
+  plan.discounts = [...(plan.discounts ?? []), { amount, created_at: new Date().toISOString() }]
+  persist()
+  return ok({ data: { success: true }, message: 'تخفیف با موفقیت ثبت شد' })
+})
 // Full financial summary — UserTpCard/FinancialDetailsDialog read credit
-// (کیف پول), balance (negative = بدهی) and performedServesPrice off it.
+// (کیف پول), balance (negative = بدهی), performedServesPrice and the discount
+// totals off it.
 on('get', String.raw`v2/treatment-plan/(\d+)/credit-total`, ({ match }) => {
   const plan = findById('treatmentPlans', match[1])
   const performedTotal = coll('performedServes')
@@ -1751,6 +1763,10 @@ on('get', String.raw`v2/treatment-plan/(\d+)/credit-total`, ({ match }) => {
     .reduce((sum, row) => sum + (Number(row.price) || 0), 0)
   const total = Number(plan?.total_price) || 0
   const prepay = Number(plan?.prepay) || 0
+  const discountTotal = (plan?.discounts ?? []).reduce(
+    (sum, row) => sum + (Number(row.amount) || 0),
+    0
+  )
   return ok({
     data: {
       total,
@@ -1758,7 +1774,8 @@ on('get', String.raw`v2/treatment-plan/(\d+)/credit-total`, ({ match }) => {
       performedServesPrice: performedTotal,
       credit: Math.max(0, prepay - performedTotal),
       balance: Math.min(0, prepay - performedTotal),
-      discount: { fixed: 0, percent: 0 },
+      discount: { total: discountTotal, fixed: discountTotal, percent: 0 },
+      treatmentPlanDiscount: { total: discountTotal },
     },
   })
 })

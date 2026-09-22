@@ -16,6 +16,9 @@ export const apiGetInstallments = () => request.get('v1/financial/installment')
 
 export const apiGetTreatmentPlanById = (id) => request.get(`v1/treatment-plan/${id}`)
 
+export const apiCreateFinancialDiscount = (data) =>
+  request.post('v1/financial/discount', data, { hadSnakize: true })
+
 export const apiGetTreatmentPlanByKey = (key) =>
   request.get(`v1/treatment-plan/view`, { params: { key } })
 

@@ -5,14 +5,82 @@
       خطا در بارگذاری طرح‌های درمان
     </QBanner>
 
+    <div v-if="showSkeleton" class="utc-container__skeleton">
+      <div class="row q-col-gutter-xs">
+        <div class="col-12">
+          <QSkeleton type="rect" height="48px" class="q-mb-md full-width" />
+        </div>
+      </div>
+      <div class="row q-col-gutter-xs q-pa-sm full-width">
+        <section class="col-auto col-grow">
+          <div class="utc">
+            <div class="utc__item">
+              <div class="utc__content">
+                <Typography variant="caption" color="grey">ایجاد کننده</Typography>
+                <QSkeleton type="text" width="90px" />
+              </div>
+              <div class="utc__content">
+                <QSkeleton type="rect" width="56px" height="26px" />
+              </div>
+              <div class="utc__content">
+                <QSkeleton type="rect" width="104px" height="32px" />
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="col-auto col-grow">
+          <div class="utc">
+            <div class="utc__item">
+              <div class="utc__content">
+                <Typography variant="caption" color="grey">کیف پول</Typography>
+                <QSkeleton type="text" width="80px" />
+              </div>
+              <div class="utc__content">
+                <Typography variant="caption" color="grey">مبلغ طرح درمان</Typography>
+                <QSkeleton type="text" width="80px" />
+              </div>
+              <div class="utc__content">
+                <Typography variant="caption" color="grey">مبلغ خدمات دریافتی</Typography>
+                <QSkeleton type="text" width="80px" />
+              </div>
+              <div class="utc__content">
+                <Typography variant="caption" color="grey">بدهی</Typography>
+                <QSkeleton type="rect" width="70px" height="26px" />
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="col-auto col-grow">
+          <div class="utc">
+            <div class="utc__item">
+              <div class="utc__basic">
+                <Typography variant="body" size="4">عکس های رادیولوژی</Typography>
+                <QSkeleton type="rect" width="50px" height="50px" />
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="col-auto col-grow">
+          <div class="utc">
+            <div class="utc__item">
+              <div class="utc__basic">
+                <Typography variant="body" size="4">سابقه بیماری</Typography>
+                <QSkeleton type="rect" width="70px" height="26px" />
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
     <!-- Empty state -->
-    <div v-if="!isLoading && sortedTreatmentPlans.length === 0" class="utc__empty">
+    <div v-else-if="sortedTreatmentPlans.length === 0" class="utc__empty">
       <Typography variant="body" color="grey" class="text-center q-pa-md">
         هیچ طرح درمانی یافت نشد
       </Typography>
     </div>
 
-    <div v-if="sortedTreatmentPlans.length > 0">
+    <div v-else>
       <div class="row q-col-gutter-xs">
         <div class="col-12">
           <QTabs
@@ -40,9 +108,6 @@
           >
             <div class="row q-col-gutter-xs q-pa-sm full-width">
               <section class="col-auto col-grow">
-                <QInnerLoading :showing="isLoading">
-                  <QSpinnerTail />
-                </QInnerLoading>
                 <div class="utc">
                   <div class="utc__item">
                     <div class="utc__content">
@@ -76,29 +141,26 @@
                 </div>
               </section>
               <section class="col-auto col-grow">
-                <QInnerLoading :showing="isTotalCreditLoading">
-                  <QSpinnerTail />
-                </QInnerLoading>
-
-                <div :class="['utc', 'utc--clickable', isDebuted ? 'utc-debtor' : '']">
+                <div
+                  class="utc relative-position"
+                  :class="['utc--clickable', isDebuted ? 'utc-debtor' : '']"
+                >
+                  <QInnerLoading :showing="isTotalCreditLoading" size="sm" />
                   <div class="utc__item">
                     <div class="utc__content">
                       <Typography variant="caption" color="grey">کیف پول</Typography>
-                      <QInnerLoading :showing="isTotalCreditLoading" size="sm" />
                       <Typography variant="body" size="4" color="dark">
                         {{ totalBalanceAmount }}
                       </Typography>
                     </div>
                     <div class="utc__content">
                       <Typography variant="caption" color="grey">مبلغ طرح درمان</Typography>
-                      <QInnerLoading :showing="isTotalCreditLoading" size="sm" />
                       <Typography variant="body" size="4" color="dark">
                         {{ generatePriceFormat(tp.totalCost) }}
                       </Typography>
                     </div>
                     <div class="utc__content">
                       <Typography variant="caption" color="grey">مبلغ خدمات دریافتی</Typography>
-                      <QInnerLoading :showing="isTotalCreditLoading" size="sm" />
                       <Typography variant="body" size="4" color="dark">
                         {{ generatePriceFormat(totalCredit?.performedServesPrice) }}
                       </Typography>
@@ -138,11 +200,7 @@
                 </div>
               </section>
               <section class="col-auto col-grow">
-                <QInnerLoading :showing="isMedicalInfoFilesLoading">
-                  <QSpinnerTail />
-                </QInnerLoading>
-
-                <div class="utc" :class="{ 'utc--disabled': isMedicalInfoFilesLoading }">
+                <div class="utc">
                   <div class="utc__item">
                     <div
                       class="utc__basic"
@@ -176,10 +234,7 @@
                 </div>
               </section>
               <section class="col-auto col-grow">
-                <QInnerLoading :showing="isLoadingdisease">
-                  <QSpinnerTail />
-                </QInnerLoading>
-                <div class="utc" :class="{ 'utc--disabled': isLoadingdisease }">
+                <div class="utc">
                   <div class="utc__item">
                     <div
                       class="utc__basic"
@@ -237,8 +292,9 @@
   <FinancialDetailsDialog
     v-model:visible="showFinancialDialog"
     :credit-data="creditData"
-    :treatment-plan="userData.treatmentPlan"
+    :treatment-plan="sortedTreatmentPlans[activeTab] ?? {}"
     :total-cost="sortedTreatmentPlans[activeTab]?.totalCost"
+    :treatment-plan-id="currentTreatmentPlanId"
   />
 </template>
 <script setup>
@@ -260,7 +316,7 @@ import { FILE_TYPE_ENUM } from '@/modules/User/enums/fileTypeEnums'
 import { useIsMobile } from '@/composables/use-is-mobile'
 import UserRadiologyUploader from '@/modules/User/components/UserDetails/UserDetailsComponents/UserMedicalDocs/components/UserRadiologyUploader'
 
-const emits = defineEmits(['change:tab'])
+const emits = defineEmits(['change:tab', 'plans-ready'])
 const props = defineProps({
   userData: {
     type: [Array, Object],
@@ -301,12 +357,26 @@ const filters = computed(() => ({
 
 const {
   data: tpData,
-  isLoading,
+  isSuccess,
   fetchNextPage,
   isFetchingNextPage,
   hasNextPage,
   error,
-} = useTreatmentPlanInfinityQuery(filters, { enabled: tpQueryEnabled })
+} = useTreatmentPlanInfinityQuery(filters, {
+  enabled: tpQueryEnabled,
+  refetchOnMount: true,
+  staleTime: 30_000,
+})
+
+const plansReady = computed(() => isSuccess.value || !!error.value)
+
+watch(
+  plansReady,
+  (ready) => {
+    if (ready) emits('plans-ready')
+  },
+  { immediate: true }
+)
 
 const allTreatmentPlans = computed(() => {
   if (!tpData.value?.pages) return []
@@ -327,6 +397,7 @@ const { data: files, isLoading: isMedicalInfoFilesLoading } = useGetFilesByType(
   FILE_TYPE_ENUM.MEDICAL,
   {
     enabled: () => !!userId.value,
+    staleTime: 30_000,
   }
 )
 const userRadiologyFiles = computed(
@@ -338,6 +409,7 @@ const userRadiologyFiles = computed(
 
 const { data: diseaseInfo, isLoading: isLoadingdisease } = useGetMedicalInfoQuery(userId, {
   enabled: () => userDiseaseEnabled.value,
+  staleTime: 30_000,
 })
 
 const hasDisease = computed(() => diseaseInfo.value?.diseases?.length > 0)
@@ -362,6 +434,17 @@ const isDebuted = computed(() => creditData.value?.balance < 0)
 const debutedAmount = computed(() =>
   creditData.value?.balance < 0 ? Math.abs(creditData.value.balance) : 0
 )
+
+const initialLoadComplete = ref(false)
+watch(
+  [plansReady, isTotalCreditLoading, isMedicalInfoFilesLoading, isLoadingdisease],
+  ([ready, credit, filesLoading, disease]) => {
+    if (ready && !credit && !filesLoading && !disease) initialLoadComplete.value = true
+  },
+  { immediate: true }
+)
+
+const showSkeleton = computed(() => !initialLoadComplete.value)
 
 const totalBalanceAmount = computed(() =>
   creditData.value?.credit < 0
@@ -456,6 +539,13 @@ watch(
 }
 .utc-container {
   width: 100%;
+
+  &__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+    padding: $spacing-sm 0;
+  }
 }
 
 .utc {

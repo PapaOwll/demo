@@ -21,7 +21,8 @@
               :aria-label="userId ? `مشاهده پروفایل بیمار ${patientName}` : undefined"
               @click="handleOpenUserDetails"
             >
-              <Typography variant="heading" size="h6">
+              <QSkeleton v-if="!patientName" type="text" width="120px" />
+              <Typography v-else variant="heading" size="h6">
                 {{ patientName }}
               </Typography>
               <Typography variant="caption" color="grey">نام بیمار</Typography>
@@ -30,10 +31,15 @@
         </div>
       </QCardSection>
       <div class="row">
-        <UserTpCard ref="userTpCardRef" :user-data="data" @change:tab="handleChangeTpId" />
+        <UserTpCard
+          ref="userTpCardRef"
+          :user-data="data"
+          @change:tab="handleChangeTpId"
+          @plans-ready="plansReady = true"
+        />
       </div>
 
-      <QCardSection class="tp-description__section">
+      <QCardSection v-if="plansReady" class="tp-description__section">
         <div class="tp-description__toolbar">
           <div class="tp-description__toolbar-title">
             <Typography variant="heading" size="h4">درمان‌ها</Typography>
@@ -250,6 +256,7 @@ const data = ref({})
 const editingRow = ref(null)
 const selectedTpId = ref(null)
 const isInitialized = ref(false)
+const plansReady = ref(false)
 const bookingId = computed(() => route.query?.bookingId || null)
 const visibleCount = ref(PAGE_SIZE)
 const isLoadingMore = ref(false)
@@ -431,7 +438,7 @@ const patientName = computed(() =>
   `${data.value?.user?.firstName || ''} ${data.value?.user?.name || ''}`.trim()
 )
 
-const tpId = computed(() => selectedTpId.value || routeTpId.value)
+const tpId = computed(() => String(selectedTpId.value || routeTpId.value || ''))
 
 const bookingFilters = computed(() => {
   if (!userId.value || !tpId.value) return null

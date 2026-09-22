@@ -315,6 +315,7 @@ const navigationStore = useNavigationStore()
 
 const selectedBooking = ref([])
 const tableContainer = ref(null)
+const tableScroller = ref(null)
 const isDragging = ref(false)
 const startX = ref(0)
 const scrollLeft = ref(0)
@@ -610,7 +611,7 @@ const onPatientFile = () => {
 const startDrag = (e) => {
   isDragging.value = true
   startX.value = e.pageX - tableContainer.value.offsetLeft
-  scrollLeft.value = tableContainer.value.scrollLeft
+  scrollLeft.value = tableScroller.value?.scrollLeft ?? 0
 }
 
 const stopDrag = () => {
@@ -618,15 +619,17 @@ const stopDrag = () => {
 }
 
 const doDrag = (e) => {
-  if (!isDragging.value) return
+  if (!isDragging.value || !tableScroller.value) return
   e.preventDefault()
   const x = e.pageX - tableContainer.value.offsetLeft
   const walk = (x - startX.value) * 2
-  tableContainer.value.scrollLeft = scrollLeft.value - walk
+  tableScroller.value.scrollLeft = scrollLeft.value - walk
 }
 
 onMounted(() => {
   tableContainer.value = document.querySelector('.booking-table__container .q-table__container')
+  // با virtual-scroll، اسکرول افقی روی wrapper داخلی کیوتار است نه q-table__container
+  tableScroller.value = document.querySelector('.booking-table__container .q-table__middle')
   if (tableContainer.value) {
     tableContainer.value.addEventListener('mousedown', startDrag)
     tableContainer.value.addEventListener('mouseleave', stopDrag)

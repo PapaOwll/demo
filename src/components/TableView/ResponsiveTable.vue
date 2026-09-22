@@ -8,7 +8,7 @@
     :loading="loading"
   >
     <template v-for="name in cellSlotNames()" :key="name" #[`body-${name}`]="scope">
-      <QTd :props="scope.props">
+      <QTd :props="scope">
         <slot
           :name="name"
           :row="scope.row"

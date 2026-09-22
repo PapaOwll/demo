@@ -10,6 +10,7 @@ import {
   apiGetUserById,
   apiGetServesByKey,
   apiGetInstallments,
+  apiCreateFinancialDiscount,
   apiUpdateTreatmentPlan,
   apiCreateTreatmentPlan,
   apiGetTreatmentPlanById,
@@ -291,6 +292,11 @@ export const useGetTreatmentPlanTotalCreditQuery = (treatmentPlanId, options = {
     select: (data) => data?.data ?? data,
     enabled: !!unref(treatmentPlanId),
     ...options,
+  })
+
+export const useCreateFinancialDiscountMutation = () =>
+  useMutation({
+    mutationFn: (data) => apiCreateFinancialDiscount(data),
   })
 
 export const useGetTreatmentPlanTotalCountMutation = () =>
