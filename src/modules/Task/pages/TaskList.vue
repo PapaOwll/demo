@@ -216,7 +216,7 @@ import Button from '@/base/Button'
 import Badge from '@/base/Badge'
 import Chip from '@/base/Chip'
 import ResponsiveTable from '@/components/TableView/ResponsiveTable'
-import { surveyFollowUpEnums } from '../constants/enums'
+import { followupKindSlugs } from '../constants/enums'
 
 const queryClient = useQueryClient()
 const route = useRoute()
@@ -283,8 +283,7 @@ const loadingList = computed(() => {
   return isFetchingNextPage.value || (isLoading.value && !hasData) || isTotalCountLoading.value
 })
 
-const hasToFollow = (slug) =>
-  slug === surveyFollowUpEnums.FIRST_VISIT || slug === surveyFollowUpEnums.TREATMENT_FOLLOW_UP
+const hasToFollow = (slug) => followupKindSlugs.has(slug)
 
 const onLoadTotalCount = () => {
   totalTasks.value = null

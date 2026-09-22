@@ -288,8 +288,8 @@ export const tasks = [
     1,
     'یادآوری ارسال عکس'
   ),
-  // survey follow-up tasks — TaskList shows the پیگیری button for these slugs
-  // (surveyFollowUpEnums) and FollowUpSurveyModal reads the matching question set
+  // survey follow-up tasks — TaskList shows the پیگیری button for follow-up
+  // kind slugs (followupKindSlugs) and FollowUpSurveyModal reads the matching question set
   task(
     404,
     testUsers[1],
@@ -392,6 +392,12 @@ export const followUpSurveys = [
         id: 'pt4',
         title: 'نظر نهایی شما درباره روند درمان',
         type: 'text',
+      },
+      {
+        // AW-169: زمان انتظار — NumberField (دقیقه), validated as integer >= 0
+        id: 'pt5',
+        title: 'چند دقیقه در اتاق انتظار سپری کردید؟',
+        type: 'time',
       },
     ],
   },

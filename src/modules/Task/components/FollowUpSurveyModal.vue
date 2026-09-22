@@ -54,6 +54,27 @@
           />
         </div>
 
+        <div v-else-if="getQuestionType(question) === 'time'" class="row">
+          <div class="col-12 col-md-4">
+            <NumberField
+              :model-value="answers[question.key]"
+              variant="outline"
+              min="0"
+              suffix="دقیقه"
+              @update:model-value="(e) => onTimeAnswerInput(question, e)"
+            />
+          </div>
+        </div>
+
+        <div v-else-if="getQuestionType(question) === 'number' && !isRatingQuestion(question)">
+          <TextField
+            variant="outline"
+            type="number"
+            :model-value="answers[question.key]"
+            @update:model-value="(e) => (answers[question.key] = e)"
+          />
+        </div>
+
         <div v-else-if="getQuestionType(question) === 'number'">
           <NumericScoreInput v-model="answers[question.key]" :max="question.max ?? 10" />
         </div>
@@ -117,6 +138,7 @@ import TextField from '@/base/TextField'
 import Typography from '@/base/Typography'
 import NumericScoreInput from '@/components/Form/NumericScoreInput'
 import noData from '@/assets/images/noData.svg'
+import NumberField from '@/components/Form/NumberField'
 
 const emits = defineEmits(['close', 'submitted'])
 const props = defineProps({
@@ -183,7 +205,18 @@ const getQuestionType = (question) => {
   const type = question.type?.slug ?? question.type ?? question.questionType
   if (type === 'choice') return 'choice'
   if (type === 'number' || type === 'score' || type === 'rating') return 'number'
+  if (type === 'time') return 'time'
   return 'text'
+}
+
+const onTimeAnswerInput = (question, value) => {
+  answers[question.key] =
+    typeof value === 'number' ? Math.max(0, value) : String(value ?? '').replace(/-/g, '')
+}
+
+const isRatingQuestion = (question) => {
+  const max = question.max ?? 10
+  return max <= 10 && !question.unit
 }
 
 const getOptionValue = (option) =>
@@ -206,23 +239,45 @@ const surveySchema = lazy(() => {
   const shape = {}
   questions.value.forEach((question) => {
     const type = getQuestionType(question)
-    if (type === 'number') {
-      shape[question.key] = yupNumber()
-        .typeError('امتیاز باید عدد باشد')
-        .integer('امتیاز باید عدد صحیح باشد')
-        .min(question.min ?? 1, `امتیاز باید حداقل ${question.min ?? 1} باشد`)
-        .max(question.max ?? 10, `امتیاز حداکثر ${question.max ?? 10} است`)
-        .nullable()
-        .notRequired()
-    } else if (type === 'choice') {
-      const values = (question.options ?? []).map((option) => getOptionValue(option))
-      shape[question.key] = yupString()
-        .typeError('گزینه انتخابی معتبر نیست')
-        .oneOf(values, 'گزینه انتخابی معتبر نیست')
-        .nullable()
-        .notRequired()
-    } else {
-      shape[question.key] = yupString().nullable().notRequired()
+    switch (type) {
+      case 'time': {
+        shape[question.key] = yupNumber()
+          .typeError('زمان باید عدد باشد')
+          .integer('زمان باید عدد صحیح باشد')
+          .min(0, 'زمان نمی‌تواند منفی باشد')
+          .nullable()
+          .notRequired()
+        break
+      }
+      case 'number': {
+        shape[question.key] = isRatingQuestion(question)
+          ? yupNumber()
+              .typeError('امتیاز باید عدد باشد')
+              .integer('امتیاز باید عدد صحیح باشد')
+              .min(question.min ?? 1, `امتیاز باید حداقل ${question.min ?? 1} باشد`)
+              .max(question.max ?? 10, `امتیاز حداکثر ${question.max ?? 10} است`)
+              .nullable()
+              .notRequired()
+          : yupNumber()
+              .typeError('زمان انتظار باید عدد باشد')
+              .integer('عدد صحیح')
+              .min(0)
+              .nullable()
+              .notRequired()
+        break
+      }
+      case 'choice': {
+        const values = (question.options ?? []).map((option) => getOptionValue(option))
+        shape[question.key] = yupString()
+          .typeError('گزینه انتخابی معتبر نیست')
+          .oneOf(values, 'گزینه انتخابی معتبر نیست')
+          .nullable()
+          .notRequired()
+        break
+      }
+      default: {
+        shape[question.key] = yupString().nullable().notRequired()
+      }
     }
   })
   return object().shape(shape)
@@ -249,8 +304,9 @@ watch(
     questions.value.forEach((question) => {
       const value = saved[question.key] ?? saved[camelCase(question.key)]
       if (value === undefined || value === null || value === '') return
+      const type = getQuestionType(question)
       answers[question.key] =
-        getQuestionType(question) === 'number' && !Number.isNaN(Number(value))
+        (type === 'number' || type === 'time') && !Number.isNaN(Number(value))
           ? Number(value)
           : value
     })
@@ -291,9 +347,6 @@ const onSelectCallRejected = () => {
 }
 
 const submitSurvey = async () => {
-  const { isValid } = await validate({ ...answers })
-  if (!isValid) return
-
   const answersPayload = {}
   questions.value.forEach((question) => {
     const value = answers[question.key]
@@ -301,6 +354,9 @@ const submitSurvey = async () => {
       answersPayload[question.key] = value
     }
   })
+
+  const { isValid } = await validate(answersPayload)
+  if (!isValid) return
 
   const payload = { answers: answersPayload }
 
