@@ -28,6 +28,7 @@
                 :disable="!!isExtradited || !!isCompletedTp || !props.isEditMode"
                 @update:model-value="onChangePrepay"
               />
+              <Typography variant="caption" class="tp-prepay__words">{{ prepayWords }}</Typography>
               <!--              <QInput-->
               <!--                :model-value="generatePriceFormat(treatmentData?.prepay || 0)"-->
               <!--                class="tp-prepay__input"-->
@@ -52,6 +53,8 @@ import { computed, ref } from 'vue'
 import { useTpProvider } from '../../composables/use-tp-provider'
 import { useTpStatus } from '../../composables/use-tp-status'
 import CurrencyField from '@/components/Form/CurrencyField'
+import Typography from '@/base/Typography'
+import { convertNumberToPersianText } from '@/utils/persian-number-to-text'
 
 const props = defineProps({
   isEditMode: {
@@ -66,6 +69,11 @@ const expanded = ref(false)
 const { isCompletedTp } = useTpStatus(treatmentData)
 
 const isExtradited = computed(() => treatmentData?.value?.extraditionAt)
+
+const prepayWords = computed(() => {
+  const value = treatmentData?.value?.prepay || 0
+  return `${convertNumberToPersianText(Number(value))} تومان`
+})
 
 const onChangePrepay = (value) => {
   updateTreatment({ prepay: value })
@@ -89,6 +97,15 @@ const onChangePrepay = (value) => {
 
   &__input {
     margin-bottom: 0.25rem;
+  }
+
+  &__words {
+    display: block;
+  }
+
+  :deep(.q-field__suffix) {
+    color: $dark;
+    font-weight: 600;
   }
 }
 </style>
