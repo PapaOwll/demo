@@ -273,6 +273,8 @@ const buildTreatmentPlanData = (includeId = false) => {
   return {
     ...(includeId && { id: route.params?.id }),
     ...(includeId && { currentStepNumber: backendStepNumber.value }),
+    // optimistic-lock token: the plan's updatedAt as loaded; a 409 means another tab saved first
+    ...(includeId && { updated_at: treatmentData?.value?.updatedAt || undefined }),
     user_id: userId.value,
     proposed_by: currentUserId?.value ?? undefined,
     public_description: treatmentData?.value?.publicDescription || undefined,
