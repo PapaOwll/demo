@@ -45,6 +45,7 @@ import {
   apiCreateManualPayment,
   apiCreatePaymentLink,
   apiCreatePaymentLinkLegacy,
+  apiResendPaymentLinkSms,
   apiVerifiedDocs,
   apiGetFileStatus,
   apiGetUserTags,
@@ -104,7 +105,7 @@ export const useGetUserInfinityQuery = (filters, options = {}) =>
 
       return {
         page: safePages.length + 1,
-        list_visited_at: lastPage?.data?.time || formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss'),
+        list_visited_at: formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss'),
       }
     },
     placeholderData: (previousData) => previousData,
@@ -610,6 +611,12 @@ export const useCreatePaymentLinkMutation = (options = {}) =>
 export const useCreatePaymentLinkLegacyMutation = () =>
   useMutation({
     mutationFn: ({ treatmentPlanId, data }) => apiCreatePaymentLinkLegacy(treatmentPlanId, data),
+  })
+
+export const useResendPaymentLinkSmsMutation = (options = {}) =>
+  useMutation({
+    mutationFn: ({ paymentRequestId }) => apiResendPaymentLinkSms(paymentRequestId),
+    ...options,
   })
 
 export const useApiSaveUserTags = (options = {}) =>

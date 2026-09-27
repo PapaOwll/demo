@@ -6,142 +6,202 @@
       </QInnerLoading>
     </div>
 
-    <div v-else-if="accountingItems.length > 0" class="ufa__content">
-      <QInfiniteScroll
-        class="ufa__scroll"
-        scroll-target=".ufa__content"
-        :offset="120"
-        @load="handleLoadMore"
-      >
-        <template v-for="(item, index) in accountingItems" :key="item.autoid">
-          <div v-if="isFirstInDay(item, index)" class="ufa__day-header">
-            <div class="ufa__day-header-line" />
-            <span class="ufa__day-header-text">
-              {{ getDayLabel(item.eventAt) }}
-            </span>
-            <div class="ufa__day-header-line" />
-          </div>
+    <template v-else-if="accountingItems.length > 0">
+      <div class="ufa__view-toggle">
+        <QBtnToggle
+          v-model="transactionsView"
+          no-caps
+          unelevated
+          class="ufa__view-toggle-control"
+          :options="[
+            { label: 'جدول', value: 'table' },
+            { label: 'تایم‌لاین', value: 'timeline' },
+          ]"
+        />
+      </div>
+      <div class="ufa__content">
+        <QInfiniteScroll
+          class="ufa__scroll"
+          :class="{ 'ufa__scroll--table': transactionsView === 'table' }"
+          :scroll-target="infiniteScrollTarget"
+          :offset="120"
+          @load="handleLoadMore"
+        >
+          <UserAccountingTable
+            v-if="transactionsView === 'table'"
+            :items="accountingItems"
+            :can-delete-cheque="canDeleteCheque"
+            @delete-check="showDeleteDialog"
+          />
+          <template v-else>
+            <template v-for="(item, index) in accountingItems" :key="item.autoid">
+              <div v-if="isFirstInDay(item, index)" class="ufa__day-header">
+                <div class="ufa__day-header-line" />
+                <Typography variant="caption" weight="semibold" class="ufa__day-header-text">
+                  {{ getDayLabel(item.eventAt) }}
+                </Typography>
+                <div class="ufa__day-header-line" />
+              </div>
 
-          <div
-            class="ufa__row"
-            :class="{
-              'ufa__row--in': Number(item.inAmount) > 0 && item.type === 'payment',
-              'ufa__row--out': Number(item.outAmount) > 0 && item.type === 'payment',
-              'ufa__row--service': Number(item.outAmount) > 0 && item.type === 'service',
+              <div
+                class="ufa__row"
+                :class="{
+                  'ufa__row--in': Number(item.inAmount) > 0 && item.type === 'payment',
+                  'ufa__row--out': Number(item.outAmount) > 0 && item.type === 'payment',
+                  'ufa__row--service': Number(item.outAmount) > 0 && item.type === 'service',
 
-              'ufa__row--first-in-day': isFirstInDay(item, index),
-              'ufa__row--last-in-day': isLastInDay(item, index),
-            }"
-          >
-            <div class="ufa__row-rail">
-              <div v-if="!isFirstInDay(item, index)" class="ufa__row-line ufa__row-line--top" />
-              <div class="ufa__row-dot" />
-              <div v-if="!isLastInDay(item, index)" class="ufa__row-line ufa__row-line--bottom" />
+                  'ufa__row--first-in-day': isFirstInDay(item, index),
+                  'ufa__row--last-in-day': isLastInDay(item, index),
+                }"
+              >
+                <div class="ufa__row-rail">
+                  <div v-if="!isFirstInDay(item, index)" class="ufa__row-line ufa__row-line--top" />
+                  <div class="ufa__row-dot" />
+                  <div
+                    v-if="!isLastInDay(item, index)"
+                    class="ufa__row-line ufa__row-line--bottom"
+                  />
+                </div>
+
+                <QCard class="ufa__row-card" flat>
+                  <QCardSection class="ufa__row-card-section">
+                    <div class="ufa__row-top">
+                      <div class="ufa__row-top-right">
+                        <Typography
+                          variant="body"
+                          size="4"
+                          weight="semibold"
+                          class="ufa__row-title"
+                        >
+                          {{ getTransactionTitle(item) }}
+                        </Typography>
+                        <Typography variant="caption" class="ufa__row-time">
+                          {{ convertToJalali(item.eventAt, 'HH:mm') }}
+                        </Typography>
+                      </div>
+                      <div class="ufa__row-amounts">
+                        <Button
+                          v-if="
+                            item.enumerationSlug === 'cheque' &&
+                            Number(item.inAmount) > 0 &&
+                            canDeleteCheque
+                          "
+                          is-icon-only
+                          is-rounded
+                          variant="flat"
+                          color="red"
+                          size="sm"
+                          type="button"
+                          :left-icon="IconTrash"
+                          aria-label="حذف چک"
+                          class="ufa__delete-btn"
+                          @click.stop="showDeleteDialog(item)"
+                        />
+                        <Typography
+                          v-if="Number(item.inAmount) > 0"
+                          variant="body"
+                          size="4"
+                          weight="semibold"
+                          class="ufa__row-amount ufa__row-amount--in"
+                        >
+                          {{ generatePriceFormat(item.inAmount, '+') }}
+                        </Typography>
+                        <Typography
+                          v-if="Number(item.outAmount) > 0"
+                          variant="body"
+                          size="4"
+                          weight="bold"
+                          class="ufa__row-amount"
+                          :class="{
+                            'ufa__row-amount--out':
+                              Number(item.outAmount) > 0 && item.type === 'payment',
+                            'ufa__row-amount--service':
+                              Number(item.outAmount) > 0 && item.type === 'service',
+                          }"
+                        >
+                          {{ generatePriceFormat(item.outAmount, '-') }}
+                        </Typography>
+                      </div>
+                    </div>
+
+                    <QSeparator class="ufa__row-separator" />
+
+                    <div v-if="item.description" class="ufa__row-description">
+                      {{ item.description }}
+                    </div>
+
+                    <div class="ufa__row-bottom">
+                      <div class="ufa__row-balance">
+                        <Typography variant="caption" class="ufa__row-balance-label">
+                          مانده:
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          weight="semibold"
+                          class="ufa__row-balance-value"
+                        >
+                          {{ generatePriceFormat(item.userBalanceCum) }}
+                        </Typography>
+                        <Typography variant="caption" class="ufa__row-balance-unit">
+                          تومان
+                        </Typography>
+                      </div>
+                      <div class="ufa__row-badges">
+                        <Badge
+                          v-if="item.chequeType"
+                          variant="outline"
+                          is-rounded
+                          :color="getChequeTypeColor(item.chequeType)"
+                          :label="getChequeTypeLabel(item.chequeType)"
+                          class="ufa__badge"
+                        />
+                        <Badge
+                          variant="outline"
+                          is-rounded
+                          :color="balanceTypeColors[resolveBalanceType(item)]"
+                          :label="getBalanceTypeLabel(item)"
+                          class="ufa__badge"
+                        />
+                      </div>
+                    </div>
+                  </QCardSection>
+                </QCard>
+              </div>
+            </template>
+          </template>
+
+          <template #loading>
+            <div v-if="isFetchingNextPage" class="ufa__loading-more">
+              <QSpinnerDots color="primary" size="lg" />
             </div>
-
-            <QCard class="ufa__row-card" flat>
-              <QCardSection class="ufa__row-card-section">
-                <div class="ufa__row-top">
-                  <div class="ufa__row-top-right">
-                    <span class="ufa__row-title">
-                      {{ item.enumeration_slug === 'beta' ? 'بتا' : item.mtGroupNameFa }}
-                    </span>
-                    <span class="ufa__row-time">
-                      {{ convertToJalali(item.eventAt, 'HH:mm') }}
-                    </span>
-                  </div>
-                  <div class="ufa__row-amounts">
-                    <QBtn
-                      v-if="
-                        item.enumerationSlug === 'cheque' &&
-                        Number(item.inAmount) > 0 &&
-                        canDeleteCheque
-                      "
-                      flat
-                      round
-                      dense
-                      color="negative"
-                      size="sm"
-                      class="ufa__delete-btn"
-                      @click.stop="showDeleteDialog(item)"
-                    >
-                      <IconTrash :size="16" />
-                    </QBtn>
-                    <Typography
-                      v-if="Number(item.inAmount) > 0"
-                      variant="body"
-                      size="4"
-                      weight="semibold"
-                      class="ufa__row-amount ufa__row-amount--in"
-                    >
-                      {{ generatePriceFormat(item.inAmount, '+') }}
-                    </Typography>
-                    <span
-                      v-if="Number(item.outAmount) > 0"
-                      class="ufa__row-amount"
-                      :class="{
-                        'ufa__row-amount--out':
-                          Number(item.outAmount) > 0 && item.type === 'payment',
-                        'ufa__row-amount--service':
-                          Number(item.outAmount) > 0 && item.type === 'service',
-                      }"
-                    >
-                      {{ generatePriceFormat(item.outAmount, '-') }}
-                    </span>
-                  </div>
-                </div>
-
-                <QSeparator class="ufa__row-separator" />
-
-                <div v-if="item.description" class="ufa__row-description">
-                  {{ item.description }}
-                </div>
-
-                <div class="ufa__row-bottom">
-                  <div class="ufa__row-balance">
-                    <span class="ufa__row-balance-label">مانده:</span>
-                    <span class="ufa__row-balance-value">
-                      {{ generatePriceFormat(item.userBalanceCum) }}
-                    </span>
-                    <span class="ufa__row-balance-unit">تومان</span>
-                  </div>
-                  <div class="ufa__row-badges">
-                    <QBadge
-                      v-if="item.userBalanceTypeCum"
-                      outline
-                      rounded
-                      :color="getBalanceTypeColor(item.userBalanceTypeCum)"
-                      :label="getBalanceTypeLabel(item.userBalanceTypeCum)"
-                      class="ufa__badge"
-                    />
-                  </div>
-                </div>
-              </QCardSection>
-            </QCard>
-          </div>
-        </template>
-
-        <template #loading>
-          <div v-if="isFetchingNextPage" class="ufa__loading-more">
-            <QSpinnerDots color="primary" size="lg" />
-          </div>
-        </template>
-      </QInfiniteScroll>
-    </div>
+          </template>
+        </QInfiniteScroll>
+      </div>
+    </template>
 
     <QCard v-else class="ufa__no-data">
       <QImg :src="TransactionNoData" alt="TransactionNoData" width="188px" />
       <QCardSection class="ufa__no-data-content">
-        <p>هنوز تراکنشی اتفاق نیفتاده!</p>
-        <p>کیف پول بیمار بعد از اولین تراکنش اینجا قابل مشاهده‌ست.</p>
+        <Typography variant="body" size="3" weight="bold">هنوز تراکنشی اتفاق نیفتاده!</Typography>
+        <Typography variant="body" size="3">
+          کیف پول بیمار بعد از اولین تراکنش اینجا قابل مشاهده‌ست.
+        </Typography>
         <div class="row q-gutter-sm">
-          <QBtn fab-mini flat unelevated :loading="isLoading" @click="refreshAccounting">
-            <IconRefresh class="text-grey" />
-          </QBtn>
-          <QBtn
+          <Button
+            is-icon-only
+            is-rounded
+            variant="flat"
+            color="grey"
+            type="button"
+            :is-loading="isLoading"
+            :left-icon="IconRefresh"
+            aria-label="بازخوانی"
+            @click="refreshAccounting"
+          />
+          <Button
             color="primary"
-            label="ایجاد تراکنش جدید"
-            unelevated
+            text="ایجاد تراکنش جدید"
+            type="button"
             @click="showPaymentDialog = true"
           />
         </div>
@@ -174,7 +234,7 @@ import { IconRefresh, IconTrash } from '@tabler/icons-vue'
 import TransactionNoData from '@/assets/images/transactionNoData.svg'
 import { useGetUserAccountingQuery, useDeleteAccountingItemMutation } from '@/modules/User/query'
 import { convertToJalali } from '@/utils/date-utils'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { Notif } from '@/data/services/notification-service'
 import UserPaymentDialog from './UserPaymentDialog'
@@ -182,13 +242,46 @@ import { generatePriceFormat } from '@/utils/formatter'
 import Typography from '@/base/Typography'
 import BaseModal from '@/base/Modal'
 import Button from '@/base/Button'
+import Badge from '@/base/Badge'
 import { getPerms } from '@/utils/get-perms'
+import {
+  balanceTypeColors,
+  chequeTypeColors,
+  chequeTypeLabels,
+} from '@/modules/User/enums/financialEnums'
+import UserAccountingTable from './UserAccountingTable'
 import { ENABLE_USER_DETAIL_MOCKS } from '@/mocks/config'
 import { mockGetUserAccounting, mockDeleteAccountingItem } from '@/mocks/user-details/financial'
+import {
+  getBalanceTypeLabel,
+  getTransactionTitle,
+  resolveBalanceType,
+  useTransactionsView,
+} from '@/modules/User/composables/use-accounting-view'
 
 const queryClient = useQueryClient()
 const showPaymentDialog = ref(false)
 const deleteDialog = reactive({ show: false, item: null })
+
+const transactionsView = useTransactionsView()
+
+const TABLE_SCROLL_TARGET = '.uac-table .q-table__middle'
+const TIMELINE_SCROLL_TARGET = '.ufa__content'
+
+const infiniteScrollTarget = ref(
+  transactionsView.value === 'table' ? TABLE_SCROLL_TARGET : TIMELINE_SCROLL_TARGET
+)
+
+const scrollListToTop = () => {
+  document.querySelector(infiniteScrollTarget.value)?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+watch(transactionsView, async (view) => {
+  await nextTick()
+  infiniteScrollTarget.value = view === 'table' ? TABLE_SCROLL_TARGET : TIMELINE_SCROLL_TARGET
+  await nextTick()
+  scrollListToTop()
+})
 
 const canDeleteCheque = getPerms('treatment-plan', 'delete', true, 'treatmentPlanFinancial')
 
@@ -212,12 +305,15 @@ const {
   hasNextPage,
   isLoading,
 } = useGetUserAccountingQuery(state.filters, {
+  ...(ENABLE_USER_DETAIL_MOCKS
+    ? {
+        queryFn: ({ pageParam = { page: 1 } }) =>
+          mockGetUserAccounting(props.userInfo?.id, pageParam),
+      }
+    : {}),
   staleTime: 0,
   gcTime: 0,
   refetchOnMount: 'always',
-  ...(ENABLE_USER_DETAIL_MOCKS
-    ? { queryFn: ({ pageParam }) => mockGetUserAccounting(props.userInfo?.id, pageParam) }
-    : {}),
 })
 
 const accountingItems = computed(() => state.items)
@@ -266,15 +362,9 @@ const confirmDelete = () => {
   deleteMutation.mutate(deleteDialog.item.autoid)
 }
 
-const getBalanceTypeLabel = (type) => {
-  const map = { credit: 'بستانکار', debit: 'بدهکار', settled: 'تسویه' }
-  return map[type] || ''
-}
+const getChequeTypeLabel = (type) => (chequeTypeLabels[type] ? `چک ${chequeTypeLabels[type]}` : '')
 
-const getBalanceTypeColor = (type) => {
-  const map = { credit: 'positive', debit: 'negative', settled: 'grey' }
-  return map[type] || 'grey'
-}
+const getChequeTypeColor = (type) => chequeTypeColors[type] || 'grey'
 
 const getDayKey = (dateStr) => {
   if (!dateStr) return ''
@@ -307,11 +397,49 @@ const getDayLabel = (dateStr) => {
   &__content {
     height: 60vh;
     overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  &__view-toggle {
+    display: flex;
+    padding: 4px 4px 12px;
+  }
+
+  &__view-toggle-control {
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+
+    :deep(.q-btn-group) {
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    :deep(.q-btn) {
+      padding: 6px 28px;
+      min-height: 36px;
+      border-radius: 0 !important;
+    }
+
+    :deep(.q-btn--active) {
+      background-color: $primary;
+      color: white;
+    }
+
+    :deep(.q-btn:not(.q-btn--active)) {
+      background-color: $grey-2;
+      color: $grey-8;
+    }
   }
 
   &__scroll {
     padding: 0 4px 120px 0;
     height: 100%;
+
+    &--table {
+      height: auto;
+      padding: 0 4px;
+    }
   }
 
   &__loading-more {

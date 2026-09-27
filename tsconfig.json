@@ -10,10 +10,9 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*", "src/*.vue"],
-      "@/base/*": ["src/base/*/index.vue"]
+      "@/*": ["./src/*", "./src/*.vue"],
+      "@/base/*": ["./src/base/*/index.vue"]
     },
     "types": ["vite/client"]
   },

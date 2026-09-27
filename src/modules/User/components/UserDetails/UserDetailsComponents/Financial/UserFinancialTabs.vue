@@ -2,7 +2,7 @@
   <QCard class="user-financial">
     <div class="user-financial__header">
       <div>
-        <h6 class="user-financial__header-title">اطلاعات مالی</h6>
+        <!-- <h6 class="user-financial__header-title">اطلاعات مالی</h6> -->
         <QTabs
           v-model="state.tabSelected"
           active-class="active-tab"

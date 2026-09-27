@@ -52,7 +52,12 @@
             </div>
 
             <div class="finance-summary-box__value-row">
-              <span class="finance-summary-box__value">{{ formatCurrency(item.value) }}</span>
+              <span
+                class="finance-summary-box__value"
+                :class="{ 'finance-summary-box__value--negative': Number(item.value) < 0 }"
+              >
+                {{ formatCurrency(item.value) }}
+              </span>
               <span class="finance-summary-box__unit">تومان</span>
             </div>
           </div>
@@ -77,7 +82,12 @@
             </div>
 
             <div class="finance-summary-box__value-row">
-              <span class="finance-summary-box__value">{{ formatCurrency(metric.value) }}</span>
+              <span
+                class="finance-summary-box__value"
+                :class="{ 'finance-summary-box__value--negative': Number(metric.value) < 0 }"
+              >
+                {{ formatCurrency(metric.value) }}
+              </span>
               <span class="finance-summary-box__unit">تومان</span>
             </div>
           </div>
@@ -267,6 +277,12 @@ const handleRetry = async () => {
     font-size: 15px;
     font-weight: 600;
     color: $grey-9;
+    direction: ltr;
+    unicode-bidi: plaintext;
+
+    &--negative {
+      color: $negative;
+    }
   }
 
   &__unit {

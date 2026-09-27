@@ -178,6 +178,7 @@ import Button from '@/base/Button'
 import TextField from '@/base/TextField'
 import UserSelectField from '@/components/Form/UserSelectField'
 import { IconDeviceLandlinePhone, IconUser } from '@tabler/icons-vue'
+import { getApiErrorMessage } from '@/utils/api-error-message'
 import { ENABLE_USER_DETAIL_MOCKS } from '@/mocks/config'
 import {
   mockCreateBarter,
@@ -309,35 +310,7 @@ const swapUsers = () => {
   form.value.receiveUser = temp
 }
 
-const handlePaymentError = (error) => {
-  if (error.data?.data?.message) {
-    return error.data.data.message
-  }
-  if (error.data?.data?.error) {
-    return error.data.data.error
-  }
-  if (error.response?.data?.message) {
-    return error.response.data.message
-  }
-  if (error.response?.data?.data?.message) {
-    return error.response.data.data.message
-  }
-  if (error.data?.message) {
-    return error.data.message
-  }
-  if (error.response?.data) {
-    if (typeof error.response.data === 'string') {
-      return error.response.data
-    }
-    if (error.response.data.error) {
-      return error.response.data.error
-    }
-  }
-  if (error.message && error.message !== 'Request failed with status code 400') {
-    return error.message
-  }
-  return 'خطا در پردازش پرداخت'
-}
+const handlePaymentError = (error) => getApiErrorMessage(error, 'خطا در پردازش پرداخت')
 
 const startResendCountdown = () => {
   resendCountdown.value = RESEND_COUNT_DOWN_SECONDS

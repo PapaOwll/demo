@@ -129,10 +129,8 @@ import { Notif } from '@/data/services/notification-service'
 import useYup from '@/composables/use-yup'
 import { convertRialToTomanText } from '@/utils/persian-number-to-text'
 import { useCreateManualPaymentMutation } from '@/modules/User/query'
-import {
-  useManualPayment,
-  extractManualPaymentError,
-} from '@/modules/User/composables/use-manual-payment'
+import { useManualPayment } from '@/modules/User/composables/use-manual-payment'
+import { getApiErrorMessage } from '@/utils/api-error-message'
 import Button from '@/base/Button'
 import SelectField from '@/base/SelectField'
 import TextField from '@/base/TextField'
@@ -276,7 +274,7 @@ const handleSubmit = async () => {
     Notif.success('پرداخت دستی با موفقیت ثبت شد')
     emit('success')
   } catch (error) {
-    Notif.error(extractManualPaymentError(error))
+    Notif.error(getApiErrorMessage(error, 'خطا در ثبت پرداخت دستی'))
   } finally {
     isSubmitting.value = false
   }

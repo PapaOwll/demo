@@ -25,6 +25,19 @@
         </div>
       </div>
 
+      <div class="col-auto flex items-center justify-end q-my-md">
+        <QBtnDropdown outline color="primary" label="دریافت خروجی">
+          <QList>
+            <QItem v-close-popup clickable @click="onDailyDoctorReport">
+              <QItemSection>شرح درمان روزانه پزشک</QItemSection>
+            </QItem>
+            <QItem v-close-popup disable clickable @click="onPatientFile">
+              <QItemSection>پرونده بیمار</QItemSection>
+            </QItem>
+          </QList>
+        </QBtnDropdown>
+      </div>
+
       <div class="col-12">
         <FilterBuilder
           :reset-filters="resetFilters"
@@ -40,18 +53,6 @@
           @apply="onFilterApply"
           @reset="onFilterReset"
         />
-      </div>
-      <div class="col-12 q-mt-sm flex justify-end q-my-md">
-        <QBtnDropdown outline color="primary" label="دریافت خروجی">
-          <QList>
-            <QItem v-close-popup clickable @click="onDailyDoctorReport">
-              <QItemSection>شرح درمان روزانه پزشک</QItemSection>
-            </QItem>
-            <QItem v-close-popup disable clickable @click="onPatientFile">
-              <QItemSection>پرونده بیمار</QItemSection>
-            </QItem>
-          </QList>
-        </QBtnDropdown>
       </div>
     </QCardSection>
 

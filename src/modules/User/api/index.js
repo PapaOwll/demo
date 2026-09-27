@@ -129,6 +129,10 @@ export const apiCreatePaymentLink = (userId, data) =>
 export const apiCreatePaymentLinkLegacy = (treatmentPlanId, data) =>
   request.post(`v1/treatment-plan/financial/${treatmentPlanId}/payment/link`, data)
 
+// RESEND PAYMENT LINK SMS
+export const apiResendPaymentLinkSms = (paymentRequestId) =>
+  request.post(`v1/financial/payment-request/${paymentRequestId}/resend-sms`)
+
 export const apiGetFileStatus = () => request.get(`v1/file/status`)
 
 export const apiGetUserTags = ({ userId, tagIds }) =>

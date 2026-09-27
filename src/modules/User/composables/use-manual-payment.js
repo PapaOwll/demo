@@ -5,28 +5,6 @@ import { getPerms } from '@/utils/get-perms'
 const MANUAL_PAYMENT_PERMISSION = 'manualPayment'
 
 /**
- * Extracts a user-facing message from a manual-payment API error.
- *
- * The backend returns the actionable text in `response.data.message`
- * for every failure case (403 branch-not-enabled, 403 permission-denied,
- * 422 validation, 400 infra error, 422 missing MinaDoc record).
- *
- * @param {unknown} error
- * @returns {string}
- */
-export const extractManualPaymentError = (error) => {
-  const responseMessage = error?.response?.data?.message
-  if (responseMessage) return responseMessage
-
-  const dataMessage = error?.response?.data?.data?.message
-  if (dataMessage) return dataMessage
-
-  if (error?.response?.data?.error) return error.response.data.error
-
-  return error?.message || 'خطا در ثبت پرداخت دستی'
-}
-
-/**
  * Wraps the per-branch manual-payment config.
  *
  * The feature is gated by BOTH the operator permission

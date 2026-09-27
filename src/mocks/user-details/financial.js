@@ -270,13 +270,30 @@ export const mockCreatePaymentLink = async ({ userId, data }) => {
     userBalanceCum: 0,
     userBalanceTypeCum: 'credit',
   })
+  const paymentRequestId = `mock-pr-${Date.now()}`
+  // Keep the link-sent view data alive so the QR/resent flow works after reload
+  mockStorage.set(`payment-request-${paymentRequestId}`, {
+    paymentRequestId,
+    link: `https://pay.mock.example/${paymentRequestId}`,
+    amount: Number(data.amount) || 0,
+    expireAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  })
   return {
     data: {
       success: true,
       amount: data.amount,
-      payment_url: 'https://pay.mock.example/#######',
+      paymentRequestId,
+      link: `https://pay.mock.example/${paymentRequestId}`,
+      expireAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      payment_url: `https://pay.mock.example/${paymentRequestId}`,
     },
   }
+}
+
+/** درگاه پرداخت — POST payment-request/:id/resend-sms */
+export const mockResendPaymentLinkSms = async (paymentRequestId) => {
+  await mockDelay(500)
+  return { data: { success: true, paymentRequestId } }
 }
 
 /** کارتخوان — POST payment/create (keeps context for the pos/pay step) */

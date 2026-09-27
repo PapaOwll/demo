@@ -64,12 +64,17 @@
         </QTabPanel>
       </QTabPanels>
 
-      <div v-if="activeTab === 'gateway'" class="payment-dialog__notice">
+      <div v-if="activeTab === 'gateway' && !isGatewaySent" class="payment-dialog__notice">
         {{ imagingNoticeText }}
       </div>
 
       <SelectField
-        v-if="activeTab !== 'cheque' && activeTab !== 'barter' && activeTab !== 'manual'"
+        v-if="
+          !isGatewaySent &&
+          activeTab !== 'cheque' &&
+          activeTab !== 'barter' &&
+          activeTab !== 'manual'
+        "
         :model-value="formData.amountType"
         label="نوع پرداخت"
         variant="outline"
@@ -87,6 +92,7 @@
       <ImagingServicesCard
         v-if="
           shouldShowImagingCard &&
+          !isGatewaySent &&
           activeTab !== 'cheque' &&
           activeTab !== 'barter' &&
           activeTab !== 'manual'
@@ -99,6 +105,7 @@
       <div
         v-if="
           shouldShowAmountInput &&
+          !isGatewaySent &&
           activeTab !== 'cheque' &&
           activeTab !== 'barter' &&
           activeTab !== 'manual'
@@ -131,8 +138,18 @@
       </div>
     </QForm>
 
+    <UserPaymentLinkSent
+      v-if="isGatewaySent"
+      class="payment-dialog__link-sent"
+      :payment-request="sentPaymentLink"
+      @resent="sentPaymentLink = $event"
+      @close="handleLinkSentClose"
+    />
+
     <div
-      v-if="activeTab !== 'cheque' && activeTab !== 'barter' && activeTab !== 'manual'"
+      v-if="
+        !isGatewaySent && activeTab !== 'cheque' && activeTab !== 'barter' && activeTab !== 'manual'
+      "
       class="payment-dialog__actions"
     >
       <Button
@@ -198,6 +215,8 @@ import ImagingServicesCard from './ImagingServicesCard'
 import UserCheques from './UserCheques'
 import UserBarter from './UserBarter'
 import ManualPaymentForm from './ManualPaymentForm'
+import UserPaymentLinkSent from './UserPaymentLinkSent'
+import { getApiErrorMessage } from '@/utils/api-error-message'
 import { getPerms } from '@/utils/get-perms'
 import { useManualPayment } from '@/modules/User/composables/use-manual-payment'
 import { ENABLE_USER_DETAIL_MOCKS } from '@/mocks/config'
@@ -282,6 +301,9 @@ const initialFormData = ref({
 const formData = computed(() => initialFormData.value)
 
 const activeTab = ref('pos')
+const sentPaymentLink = ref(null)
+
+const isGatewaySent = computed(() => activeTab.value === 'gateway' && !!sentPaymentLink.value)
 
 watch(activeTab, (newTab) => {
   initialFormData.value.paymentMethod = newTab
@@ -397,36 +419,6 @@ const submitButtonLabel = computed(() => {
   }
 })
 
-const handlePaymentError = (error) => {
-  if (error.data?.data?.message) {
-    return error.data.data.message
-  }
-  if (error.data?.data?.error) {
-    return error.data.data.error
-  }
-  if (error.response?.data?.message) {
-    return error.response.data.message
-  }
-  if (error.response?.data?.data?.message) {
-    return error.response.data.data.message
-  }
-  if (error.data?.message) {
-    return error.data.message
-  }
-  if (error.response?.data) {
-    if (typeof error.response.data === 'string') {
-      return error.response.data
-    }
-    if (error.response.data.error) {
-      return error.response.data.error
-    }
-  }
-  if (error.message && error.message !== 'Request failed with status code 400') {
-    return error.message
-  }
-  return 'خطا در پردازش پرداخت'
-}
-
 const handleBarterSuccess = (paymentData) => {
   emit('submit', {
     userId: props.userId,
@@ -434,6 +426,10 @@ const handleBarterSuccess = (paymentData) => {
     paymentData,
   })
   showSuccessDialog.value = true
+}
+
+const handleLinkSentClose = () => {
+  isVisible.value = false
 }
 
 const handleBarterClose = () => {
@@ -526,6 +522,17 @@ const handleSubmit = async () => {
       })
 
       Notif.success('پیوند پرداخت ارسال شد', { group: false })
+
+      const linkPayload = linkResponse.data
+      if (linkPayload?.link) {
+        sentPaymentLink.value = {
+          paymentRequestId: linkPayload.paymentRequestId,
+          link: linkPayload.link,
+          amount: linkPayload.amount ?? paymentLinkData.amount,
+          expireAt: linkPayload.expireAt || null,
+        }
+        return
+      }
 
       isVisible.value = false
       return
@@ -670,7 +677,7 @@ const handleSubmit = async () => {
       clearPaymentUuid()
     }
 
-    Notif.error(handlePaymentError(error), { group: false })
+    Notif.error(getApiErrorMessage(error, 'خطا در پردازش پرداخت'), { group: false })
   } finally {
     isSubmitting.value = false
     showCancelBtn.value = false
@@ -693,6 +700,7 @@ const resetForm = () => {
   }
   imagingCard.value?.reset()
   activeTab.value = 'pos'
+  sentPaymentLink.value = null
 
   isSubmitting.value = false
   showCancelBtn.value = false
@@ -845,6 +853,10 @@ watch(isVisible, (newValue) => {
   }
 
   &__action-btn {
+    flex: 1;
+  }
+
+  &__link-sent {
     flex: 1;
   }
 }
