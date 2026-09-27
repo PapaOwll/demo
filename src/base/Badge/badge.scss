@@ -108,6 +108,14 @@
   --badge-border: #{$light-blue-outline};
 }
 
+.badge--primary {
+  --badge-bg: #{$primary-filled};
+  --badge-bg-light: #{$primary-light};
+  --badge-text: #{$primary-text};
+  --badge-text-on-color: #{$white};
+  --badge-border: #{$primary-outline};
+}
+
 .badge--grey {
   --badge-bg: #{$grey-filled};
   --badge-bg-light: #{$grey-light};

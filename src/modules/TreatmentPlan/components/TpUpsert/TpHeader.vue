@@ -8,9 +8,23 @@
         @click="onBack"
       />
       <img :src="logo" alt="Sitra Panel" />
-      <span v-if="props.showPreviewUser">پیش نمایش طرح درمان</span>
-      <span v-else-if="isDraft">پیش نویس طرح درمان</span>
-      <span v-else>پنل تعیین قیمت</span>
+      <Typography v-if="props.showPreviewUser" variant="body" size="4">
+        پیش نمایش طرح درمان
+      </Typography>
+      <Typography v-else-if="isDraft" variant="body" size="4">پیش نویس طرح درمان</Typography>
+      <template v-else>
+        <Typography variant="body" size="4">پنل تعیین قیمت</Typography>
+        <Typography
+          v-if="selectedServeTitle"
+          variant="body"
+          size="4"
+          weight="semibold"
+          color="blue"
+          class="tph__selected-serve"
+        >
+          / {{ selectedServeTitle }}
+        </Typography>
+      </template>
     </div>
     <div class="tph__action">
       <div class="tph__action">
@@ -29,9 +43,11 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { IconArrowRight } from '@tabler/icons-vue'
+import Typography from '@/base/Typography'
 import TreatmentPlanUser from './TpUser'
 import TppUser from '../TpPreview/TppUser'
 import { useTpStatus } from '../../composables/use-tp-status'
+import { useTpProvider } from '../../composables/use-tp-provider'
 
 const props = defineProps({
   showBack: {
@@ -51,6 +67,8 @@ const props = defineProps({
 const router = useRouter()
 const { isDraft: isDraftComposable } = useTpStatus()
 const isDraft = props.showPreviewUser ? null : isDraftComposable
+const { selectedServe } = useTpProvider(['selectedServe'])
+const selectedServeTitle = computed(() => selectedServe?.value?.title)
 
 const logo = computed(
   () =>

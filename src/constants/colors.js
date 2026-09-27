@@ -1,4 +1,5 @@
 export const QUASAR_COLORS = [
+  'primary',
   'red',
   'pink',
   'purple',
