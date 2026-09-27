@@ -262,7 +262,6 @@ const route = useRoute()
 const userFormVisible = ref(false)
 const loading = ref(false)
 const totalUsers = ref(null)
-const lastVisited = ref(null)
 const selectedUser = ref([])
 
 const [isShowAdvisorEditModal, { open: openModal, close: closeModal }] = useDisclosure()
@@ -300,7 +299,6 @@ const loadNextPage = () => {
 const userListItems = computed(() => {
   return (
     userListData.value?.pages?.flatMap((pageData) => {
-      lastVisited.value = pageData.data?.time
       return pageData.data?.items.map((item) => ({
         ...item,
         introductionIcon: item?.methodOfIntroduction?.icon,

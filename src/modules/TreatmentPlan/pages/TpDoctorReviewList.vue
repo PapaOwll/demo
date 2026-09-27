@@ -169,7 +169,7 @@ const onLoadTotalCount = async () => {
   await queryClient.invalidateQueries({
     queryKey: ['treatment-plan', 'doctor-review'],
   })
-  totalReviews.value = reviews.value?.pages?.[0]?.data?.sum || doctorReviewList.value?.length
+  totalReviews.value = doctorReviewList.value?.length
 }
 
 const loadNextPage = () => {
