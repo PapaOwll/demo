@@ -43,7 +43,7 @@ const props = defineProps({
 const tabIndex = ref(1)
 const medicalInfo = defineAsyncComponent(() => import('./components/UserMedicalInfo'))
 const UserRadiologyImages = defineAsyncComponent(() => import('./components/UserRadiologyImages'))
-const UserOpgRequests = defineAsyncComponent(() => import('./components/UserOpgRequest'))
+const UserOpgRequests = defineAsyncComponent(() => import('./components/UserPrescriptionList'))
 
 const tabs = computed(() => [
   {
@@ -87,7 +87,7 @@ const tabs = computed(() => [
 
 .active-tab {
   color: $white;
-  background-color: $blue;
+  background-color: $light-blue-filled;
 }
 
 .activity-tabs {
