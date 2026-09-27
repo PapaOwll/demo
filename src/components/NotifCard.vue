@@ -19,7 +19,7 @@
           />
         </div>
 
-        <div class="app-notify__body">{{ message }}</div>
+        <div class="app-notify__body" v-html="sanitizedMessage" />
 
         <div v-if="caption" class="app-notify__caption">{{ caption }}</div>
 
@@ -49,6 +49,7 @@ import {
   IconX,
 } from '@tabler/icons-vue'
 import Button from '@/base/Button'
+import { sanitizeNotifHtml } from '@/utils/sanitize-notif-html'
 
 const props = defineProps({
   type: {
@@ -84,6 +85,8 @@ const TYPE_ICON_MAP = Object.freeze({
 })
 
 const resolvedIcon = computed(() => TYPE_ICON_MAP[props.type] || TYPE_ICON_MAP.info)
+
+const sanitizedMessage = computed(() => sanitizeNotifHtml(props.message))
 </script>
 
 <style lang="scss" scoped>
@@ -144,6 +147,7 @@ const resolvedIcon = computed(() => TYPE_ICON_MAP[props.type] || TYPE_ICON_MAP.i
     margin-top: $spacing-xxs;
     display: flex;
     justify-content: space-between;
+    white-space: pre-line;
   }
 
   &__caption {
