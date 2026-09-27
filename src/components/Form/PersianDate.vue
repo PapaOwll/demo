@@ -9,6 +9,7 @@
       :disable="disable"
       :loading="loading"
       :error="error"
+      :required="required"
       :error-message="errorMessage"
       readonly
       bg-color="white"
@@ -106,6 +107,10 @@ const props = defineProps({
     default: 6,
   },
   error: {
+    type: Boolean,
+    default: false,
+  },
+  required: {
     type: Boolean,
     default: false,
   },

@@ -1,13 +1,21 @@
 import { computed, reactive, ref, unref, watch } from 'vue'
+import * as yup from 'yup'
 import { apiUpdateBranch, apiGetBranchStatusHistory, apiGetBranchDeactivationImpact } from '../api'
 import { useGetEnumsBySlug } from '@/modules/User/query'
 import { convertToJalali, convertToJalaliWithTime } from '@/utils/date-utils'
 import { confirmDialog } from '@/composables/use-notif'
+import useYup from '@/composables/use-yup'
 
 const BRANCH_STATUS_SLUG = 'branch-status'
 
 const INTERNAL_FIELDS = ['status', 'contractDate', 'activationDate']
 const DATE_FIELDS = new Set(['contractDate', 'activationDate'])
+
+const branchStatusSchema = yup.object({
+  status: yup.number().required('انتخاب وضعیت شعبه الزامی است'),
+  contractDate: yup.string().required('تاریخ قرارداد الزامی است'),
+  activationDate: yup.string().required('تاریخ فعال‌سازی الزامی است'),
+})
 
 const EMPTY_VALUE = '—'
 
@@ -212,6 +220,8 @@ export const useBranchStatus = (branchIdSource, branchSource) => {
     activationDate: null,
   })
 
+  const { validate, errors, resetErrors } = useYup(branchStatusSchema)
+
   const savedSnapshot = ref({
     status: null,
     contractDate: null,
@@ -237,6 +247,7 @@ export const useBranchStatus = (branchIdSource, branchSource) => {
     form.status = snapshot.status
     form.contractDate = snapshot.contractDate
     form.activationDate = snapshot.activationDate
+    resetErrors()
   }
 
   const rawHistory = ref([])
@@ -273,6 +284,16 @@ export const useBranchStatus = (branchIdSource, branchSource) => {
     },
     { immediate: true }
   )
+  watch(
+    () => ({ ...form }),
+    () => {
+      INTERNAL_FIELDS.forEach((field) => {
+        if (errors.value[field] && form[field] != null && form[field] !== '') {
+          errors.value[field] = null
+        }
+      })
+    }
+  )
 
   const isFieldChanged = (field) =>
     normalizeField(field, savedSnapshot.value[field]) !== normalizeField(field, form[field])
@@ -287,6 +308,10 @@ export const useBranchStatus = (branchIdSource, branchSource) => {
 
   const submit = async () => {
     if (isSubmitting.value) return { success: false, busy: true }
+
+    const { isValid } = await validate({ ...form })
+    if (!isValid) return { success: false, invalid: true }
+
     const changedFields = INTERNAL_FIELDS.filter((field) => isFieldChanged(field))
     if (changedFields.length === 0) return { success: true, changedCount: 0, noOp: true }
 
@@ -337,6 +362,7 @@ export const useBranchStatus = (branchIdSource, branchSource) => {
 
   return {
     form,
+    errors,
     statusOptions,
     isStatusOptionsLoading,
     hasChanges,

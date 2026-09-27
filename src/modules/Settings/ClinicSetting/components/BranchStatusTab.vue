@@ -6,23 +6,37 @@
           v-model="form.status"
           label="وضعیت فعلی شعبه"
           placeholder="انتخاب کنید"
+          required
           :options="statusOptions"
           option-label="label"
           option-value="value"
+          clearable
           emit-value
           map-options
           variant="outline"
           :disable="isSubmitting || isStatusOptionsLoading"
+          :error="!!errors.status"
+          :error-message="errors.status"
         />
       </div>
       <div class="branch-status__field branch-status__field--contract">
-        <PersianDate v-model="form.contractDate" label="تاریخ قرارداد" :disable="isSubmitting" />
+        <PersianDate
+          v-model="form.contractDate"
+          label="تاریخ قرارداد"
+          :disable="isSubmitting"
+          required
+          :error="!!errors.contractDate"
+          :error-message="errors.contractDate"
+        />
       </div>
       <div class="branch-status__field branch-status__field--activation">
         <PersianDate
           v-model="form.activationDate"
           label="تاریخ فعال‌سازی"
           :disable="isSubmitting"
+          required
+          :error="!!errors.activationDate"
+          :error-message="errors.activationDate"
         />
       </div>
     </div>
@@ -138,6 +152,7 @@ const emit = defineEmits(['saved'])
 
 const {
   form,
+  errors,
   statusOptions,
   isStatusOptionsLoading,
   hasChanges,
@@ -154,7 +169,7 @@ const historyExpanded = ref(true)
 
 const handleSubmit = async () => {
   const result = await submit()
-  if (result.busy || result.noOp) return
+  if (result.busy || result.noOp || result.invalid) return
   if (result && result.cancelled) return
   Notif.success(result.message || 'تغییرات وضعیت شعبه با موفقیت ذخیره شد', { position: 'top' })
   emit('saved')
